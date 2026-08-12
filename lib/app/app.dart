@@ -8,6 +8,7 @@ import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_crypto.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
 import 'package:fund_nexus/features/home/data/home_repository.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/main_shell/main_shell_page.dart';
@@ -19,6 +20,7 @@ class FundNexusApp extends StatelessWidget {
     required this.apiCrypto,
     required this.config,
     required this.sessionStore,
+    required this.sessionExpiryCoordinator,
     super.key,
   });
 
@@ -26,6 +28,7 @@ class FundNexusApp extends StatelessWidget {
   final ApiCrypto apiCrypto;
   final AppConfig config;
   final SessionStore sessionStore;
+  final SessionExpiryCoordinator sessionExpiryCoordinator;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +36,9 @@ class FundNexusApp extends StatelessWidget {
       providers: [
         RepositoryProvider<AppConfig>.value(value: config),
         RepositoryProvider<SessionStore>.value(value: sessionStore),
+        RepositoryProvider<SessionExpiryCoordinator>.value(
+          value: sessionExpiryCoordinator,
+        ),
         RepositoryProvider<ApiClient>.value(value: apiClient),
         RepositoryProvider<ApiCrypto>.value(value: apiCrypto),
       ],
@@ -59,7 +65,9 @@ class FundNexusApp extends StatelessWidget {
               },
             ),
           ],
-          child: const MainShellPage(),
+          child: MainShellPage(
+            sessionExpiryEvents: sessionExpiryCoordinator.events,
+          ),
         ),
       ),
     );

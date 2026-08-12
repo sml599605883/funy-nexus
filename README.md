@@ -31,10 +31,15 @@ flutter run \
   --dart-define=API_BASE_URL=https://staging-api.example.com/api \
   --dart-define=WEB_BASE_URL=https://staging.example.com \
   --dart-define=API_SIGNING_SECRET=server-provided-secret \
+  --dart-define=API_AES_KEY=server-provided-aes-key \
+  --dart-define=API_AES_IV=server-provided-aes-iv \
   --dart-define=CAPTURE_PROXY_HOST=192.168.1.10 \
   --dart-define=CAPTURE_PROXY_PORT=8888 \
   --dart-define=CAPTURE_ALLOW_BAD_CERTIFICATES=true
 ```
+
+The signing and AES values have no source-controlled defaults. Every build
+must provide them through the build environment; do not commit real values.
 
 Every request reloads the installed app version, iOS model code, and system
 version. The first available IDFV is persisted in the device-only Keychain and

@@ -32,6 +32,21 @@ void main() {
     expect(store.isAuthenticated, isTrue);
   });
 
+  test('refreshes only the persisted phone', () async {
+    final persistence = _MemorySessionPersistence(
+      phone: '09171234567',
+      sessionId: 'token',
+    );
+    final store = SessionStore(persistence);
+    await store.restore();
+    persistence.phone = '09981234567';
+
+    await store.refreshPhone();
+
+    expect(store.phone, '09981234567');
+    expect(store.sessionId, 'token');
+  });
+
   test('clear removes credential but remembers phone by default', () async {
     final persistence = _MemorySessionPersistence();
     final store = SessionStore(persistence);

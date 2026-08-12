@@ -24,4 +24,18 @@ abstract final class AppColors {
   static const homeApplyTrack = Color.fromRGBO(176, 242, 221, 1);
   static const homeApplyButtonStart = Color.fromRGBO(39, 212, 167, 1);
   static const homeApplyButtonEnd = Color.fromRGBO(53, 192, 145, 1);
+  static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
+  static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
+  static const mineItemText = Color.fromRGBO(8, 11, 21, 1);
+  static const mineAvatar = Color.fromRGBO(25, 64, 226, 1);
+  static const mineOrderShadow = Color.fromRGBO(0, 0, 0, 0.09);
+  static const mineAccountPanelTop = Color.fromRGBO(46, 100, 83, 1);
+  static const mineAccountPanelStart = Color.fromRGBO(152, 220, 196, 1);
+  static const mineAccountPanelEnd = Color.fromRGBO(226, 250, 243, 1);
+  static const mineAccountPanelAccent = Color.fromRGBO(32, 209, 158, 1);
+  static const mineDialogBarrier = Color.fromRGBO(0, 0, 0, 0.5);
+  static const mineRetentionContinueStart = Color.fromRGBO(253, 227, 151, 1);
+  static const mineRetentionContinueEnd = Color.fromRGBO(255, 240, 192, 1);
+  static const mineRetentionContinueText = Color.fromRGBO(62, 7, 0, 1);
+  static const mineRetentionExitText = Color.fromRGBO(255, 255, 255, 1);
 }

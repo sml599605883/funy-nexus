@@ -53,6 +53,23 @@ void main() {
     expect(find.text('Mine'), findsNWidgets(2));
   });
 
+  testWidgets('refreshes the remembered phone when entering Mine', (
+    tester,
+  ) async {
+    final session = _TestSessionStore(
+      authenticated: true,
+      phone: '09171234567',
+    );
+    await tester.pumpWidget(_testShell(authenticated: true, session: session));
+    await tester.pumpAndSettle();
+    session.phoneValue = '09981234567';
+
+    await tester.tap(find.byKey(const Key('tab-mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('099 **** 4567'), findsOneWidget);
+  });
+
   testWidgets('unauthenticated protected tab opens login and keeps Home', (
     tester,
   ) async {
@@ -188,9 +205,10 @@ Widget _testShell({
   MainTabCubit? tabs,
   HomeLoader? homeLoader,
   WidgetBuilder? loginPageBuilder,
+  _TestSessionStore? session,
 }) {
   return RepositoryProvider<SessionStore>.value(
-    value: _TestSessionStore(authenticated),
+    value: session ?? _TestSessionStore(authenticated: authenticated),
     child: MaterialApp(
       theme: AppTheme.light,
       navigatorObservers: [appRouteObserver],
@@ -211,17 +229,31 @@ Widget _testShell({
 }
 
 class _TestSessionStore extends SessionStore {
-  _TestSessionStore(this.authenticated) : super(_MemoryPersistence());
+  factory _TestSessionStore({required bool authenticated, String? phone}) {
+    final persistence = _MemoryPersistence(phone: phone);
+    return _TestSessionStore._(authenticated, persistence);
+  }
+
+  _TestSessionStore._(this.authenticated, this._persistence)
+    : super(_persistence);
 
   final bool authenticated;
+  final _MemoryPersistence _persistence;
+
+  String? get phoneValue => phone;
+  set phoneValue(String? value) => _persistence.phone = value;
 
   @override
   bool get isAuthenticated => authenticated;
 }
 
 class _MemoryPersistence implements SessionPersistence {
+  _MemoryPersistence({this.phone});
+
+  String? phone;
+
   @override
-  Future<String?> readPhone() async => null;
+  Future<String?> readPhone() async => phone;
 
   @override
   Future<String?> readSessionId() async => null;

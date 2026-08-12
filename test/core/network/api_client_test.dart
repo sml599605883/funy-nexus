@@ -183,6 +183,26 @@ void main() {
     expect(login.data.coccolith, 'session-login');
   });
 
+  test('uses the documented account exit request contracts', () async {
+    final requests = <RequestOptions>[];
+    final client = _client(sessionStore, (request) {
+      requests.add(request);
+      return _successResponse(const {});
+    });
+    addTearDown(client.close);
+
+    await client.logout();
+    await client.deleteAccount();
+
+    expect(requests[0].method, 'GET');
+    expect(requests[0].path, '/viler/fasciitis');
+    expect(requests[0].queryParameters['contrasts'], hasLength(6));
+    expect(requests[0].queryParameters['irenically'], hasLength(6));
+    expect(requests[1].method, 'GET');
+    expect(requests[1].path, '/viler/bravo');
+    expect(requests[1].queryParameters['cormous'], hasLength(6));
+  });
+
   test(
     'rejects login data that does not match the documented fields',
     () async {
@@ -321,25 +341,15 @@ void main() {
     );
   });
 
-  test('does not send unsigned requests', () async {
-    var requestCount = 0;
-    final client = _client(sessionStore, (_) {
-      requestCount++;
-      return _successResponse(null);
-    }, signingSecret: '');
-    addTearDown(client.close);
-
-    await expectLater(
-      client.get<void>('/viler/profile', decode: (_) {}),
-      throwsA(
-        isA<ApiException>().having(
-          (error) => error.type,
-          'type',
-          ApiFailureType.configuration,
-        ),
+  test('rejects an unsigned client configuration', () {
+    expect(
+      () => _client(
+        sessionStore,
+        (_) => _successResponse(null),
+        signingSecret: '',
       ),
+      throwsArgumentError,
     );
-    expect(requestCount, 0);
   });
 
   test('does not allow business query to override public params', () async {
@@ -393,6 +403,27 @@ void main() {
         ),
       );
     }
+  });
+
+  test('supports cancelling a request before transport', () async {
+    final client = _client(sessionStore, (_) => _successResponse(null));
+    addTearDown(client.close);
+    final cancelToken = CancelToken()..cancel('page disposed');
+
+    await expectLater(
+      client.get<void>(
+        '/viler/profile',
+        cancelToken: cancelToken,
+        decode: (_) {},
+      ),
+      throwsA(
+        isA<ApiException>().having(
+          (error) => error.type,
+          'type',
+          ApiFailureType.cancelled,
+        ),
+      ),
+    );
   });
 
   test('maps non-success HTTP status', () async {

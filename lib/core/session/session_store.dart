@@ -74,6 +74,10 @@ class SessionStore {
     _sessionId = _normalize(values[1]);
   }
 
+  Future<void> refreshPhone() async {
+    _phone = _normalize(await _persistence.readPhone());
+  }
+
   Future<void> save({required String phone, required String sessionId}) async {
     final normalizedPhone = _normalize(phone);
     final normalizedSessionId = _normalize(sessionId);

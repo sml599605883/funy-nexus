@@ -26,8 +26,8 @@ class AppConfig {
         'Production endpoints must use HTTPS',
       );
     }
-    if (environment == AppEnvironment.production && signingSecret.isEmpty) {
-      throw ArgumentError('Production API signing secret must not be empty');
+    if (signingSecret.trim().isEmpty) {
+      throw ArgumentError('API signing secret must not be empty');
     }
     if (![16, 24, 32].contains(encryptionKey.length)) {
       throw ArgumentError('AES key must contain 16, 24, or 32 UTF-8 bytes');
@@ -64,16 +64,13 @@ class AppConfig {
     );
     const signingSecret = String.fromEnvironment(
       'API_SIGNING_SECRET',
-      defaultValue: '5aca4542cb13a0d1bd8d34fd91a88861',
+      defaultValue: '',
     );
     const encryptionKey = String.fromEnvironment(
       'API_AES_KEY',
-      defaultValue: 'f7e0c6bd81ab5731',
+      defaultValue: '',
     );
-    const encryptionIv = String.fromEnvironment(
-      'API_AES_IV',
-      defaultValue: '8b1d0fb0dc2c9e6c',
-    );
+    const encryptionIv = String.fromEnvironment('API_AES_IV', defaultValue: '');
     const captureProxyHost = String.fromEnvironment(
       'CAPTURE_PROXY_HOST',
       defaultValue: '',

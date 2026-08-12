@@ -15,9 +15,14 @@ import 'package:fund_nexus/features/mine/mine_page.dart';
 import 'package:fund_nexus/features/progress/progress_page.dart';
 
 class MainShellPage extends StatefulWidget {
-  const MainShellPage({this.loginPageBuilder, super.key});
+  const MainShellPage({
+    this.loginPageBuilder,
+    this.sessionExpiryEvents,
+    super.key,
+  });
 
   final WidgetBuilder? loginPageBuilder;
+  final Stream<void>? sessionExpiryEvents;
 
   @override
   State<MainShellPage> createState() => _MainShellPageState();
@@ -31,12 +36,7 @@ class _MainShellPageState extends State<MainShellPage>
   bool _wasInBackground = false;
   bool _inactiveResumeRefreshConsumed = false;
   PageRoute<dynamic>? _subscribedRoute;
-
-  static const _pages = <Widget>[
-    HomePage(key: PageStorageKey('home-page')),
-    ProgressPage(key: PageStorageKey('progress-page')),
-    MinePage(key: PageStorageKey('mine-page')),
-  ];
+  StreamSubscription<void>? _sessionExpirySubscription;
 
   static const _items = <_TabItemData>[
     _TabItemData(
@@ -68,6 +68,9 @@ class _MainShellPageState extends State<MainShellPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _sessionExpirySubscription ??= widget.sessionExpiryEvents?.listen(
+      (_) => unawaited(_openLoginAfterSessionExpiry()),
+    );
     final route = ModalRoute.of(context);
     if (route is PageRoute<dynamic> && route != _subscribedRoute) {
       if (_subscribedRoute != null) {
@@ -80,6 +83,7 @@ class _MainShellPageState extends State<MainShellPage>
 
   @override
   void dispose() {
+    _sessionExpirySubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     appRouteObserver.unsubscribe(this);
     super.dispose();
@@ -125,7 +129,22 @@ class _MainShellPageState extends State<MainShellPage>
     return BlocBuilder<MainTabCubit, int>(
       builder: (context, selectedIndex) {
         return Scaffold(
-          body: IndexedStack(index: selectedIndex, children: _pages),
+          body: IndexedStack(
+            index: selectedIndex,
+            children: [
+              const HomePage(key: PageStorageKey('home-page')),
+              const ProgressPage(key: PageStorageKey('progress-page')),
+              MinePage(
+                key: const PageStorageKey('mine-page'),
+                phone: context.read<SessionStore>().phone,
+                onAccountExitSuccess: () async {
+                  context.read<MainTabCubit>().selectTab(0);
+                  await context.read<HomeCubit>().load();
+                  if (mounted) setState(() {});
+                },
+              ),
+            ],
+          ),
           bottomNavigationBar: _FundNexusTabBar(
             items: _items,
             selectedIndex: selectedIndex,
@@ -158,6 +177,25 @@ class _MainShellPageState extends State<MainShellPage>
     tabs.selectTab(index);
     if (index == 0) {
       await context.read<HomeCubit>().load();
+    } else if (index == 2) {
+      await context.read<SessionStore>().refreshPhone();
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _openLoginAfterSessionExpiry() async {
+    if (!mounted || _openingLogin) return;
+    _openingLogin = true;
+    context.read<MainTabCubit>().selectTab(0);
+    try {
+      await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: widget.loginPageBuilder ?? (_) => const LoginPage(),
+        ),
+      );
+    } finally {
+      _openingLogin = false;
+      if (mounted) setState(() {});
     }
   }
 

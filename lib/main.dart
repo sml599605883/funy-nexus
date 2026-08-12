@@ -10,6 +10,7 @@ import 'package:fund_nexus/core/network/api_crypto.dart';
 import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/capture_proxy.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,9 @@ Future<void> main() async {
   final sessionStore = SessionStore.persistent();
   final deviceMetadataStore = DeviceMetadataStore.persistent();
   await sessionStore.restore();
+  final sessionExpiryCoordinator = SessionExpiryCoordinator(
+    sessionStore: sessionStore,
+  );
   final publicParamsProvider = DeviceApiPublicParamsProvider(
     source: PluginIosPlatformMetadataSource(),
     metadataStore: deviceMetadataStore,
@@ -29,6 +33,7 @@ Future<void> main() async {
     config: config,
     sessionStore: sessionStore,
     publicParamsProvider: publicParamsProvider,
+    sessionExpiryCoordinator: sessionExpiryCoordinator,
     captureProxyHost: systemProxy?.host,
     captureProxyPort: systemProxy?.port,
   );
@@ -49,6 +54,7 @@ Future<void> main() async {
       apiCrypto: apiCrypto,
       config: config,
       sessionStore: sessionStore,
+      sessionExpiryCoordinator: sessionExpiryCoordinator,
     ),
   );
 }

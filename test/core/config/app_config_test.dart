@@ -82,11 +82,8 @@ void main() {
     );
   });
 
-  test('uses the documented development API and H5 endpoints', () {
-    final config = AppConfig.fromEnvironment();
-
-    expect(config.baseUrl.toString(), 'http://8.220.188.106/rebottled');
-    expect(config.webBaseUrl.toString(), 'http://8.220.188.106');
+  test('does not provide source-controlled runtime credentials', () {
+    expect(AppConfig.fromEnvironment, throwsArgumentError);
   });
 
   test('accepts an explicit development capture proxy', () {

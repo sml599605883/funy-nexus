@@ -10,6 +10,7 @@ import 'package:fund_nexus/core/network/api_signature.dart';
 import 'package:fund_nexus/core/network/capture_adapter.dart';
 import 'package:fund_nexus/core/network/login_response_data.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
 
 typedef ApiDataDecoder<T> = T Function(Object? data);
 
@@ -17,6 +18,7 @@ class ApiClient {
   ApiClient({
     required Dio dio,
     required ApiSignature signature,
+    this.sessionExpiryCoordinator,
     this.protocol = const ApiProtocol(),
   }) : _dio = dio,
        _signature = signature;
@@ -25,6 +27,7 @@ class ApiClient {
     required AppConfig config,
     required SessionStore sessionStore,
     required ApiPublicParamsProvider publicParamsProvider,
+    SessionExpiryCoordinator? sessionExpiryCoordinator,
     String? captureProxyHost,
     int? captureProxyPort,
     ApiProtocol protocol = const ApiProtocol(),
@@ -47,6 +50,7 @@ class ApiClient {
         publicParamsProvider: publicParamsProvider,
       ),
       protocol: protocol,
+      sessionExpiryCoordinator: sessionExpiryCoordinator,
     );
     final proxyHost = captureProxyHost ?? config.captureProxyHost;
     final proxyPort = captureProxyPort ?? config.captureProxyPort;
@@ -63,6 +67,7 @@ class ApiClient {
 
   final Dio _dio;
   final ApiSignature _signature;
+  final SessionExpiryCoordinator? sessionExpiryCoordinator;
   final ApiProtocol protocol;
 
   Future<ApiResponse<void>> sendLoginSmsCode({required String phone}) {
@@ -93,10 +98,30 @@ class ApiClient {
     );
   }
 
+  Future<ApiResponse<void>> logout() {
+    return get<void>(
+      '/viler/fasciitis',
+      queryParameters: {
+        'contrasts': ApiSignature.randomDigits(6),
+        'irenically': ApiSignature.randomDigits(6),
+      },
+      decode: (_) {},
+    );
+  }
+
+  Future<ApiResponse<void>> deleteAccount() {
+    return get<void>(
+      '/viler/bravo',
+      queryParameters: {'cormous': ApiSignature.randomDigits(6)},
+      decode: (_) {},
+    );
+  }
+
   Future<ApiResponse<T>> get<T>(
     String path, {
     Map<String, Object?>? queryParameters,
     String? contentType,
+    CancelToken? cancelToken,
     required ApiDataDecoder<T> decode,
   }) {
     return request(
@@ -104,6 +129,7 @@ class ApiClient {
       method: 'GET',
       queryParameters: queryParameters,
       contentType: contentType,
+      cancelToken: cancelToken,
       decode: decode,
     );
   }
@@ -113,6 +139,7 @@ class ApiClient {
     Object? data,
     Map<String, Object?>? queryParameters,
     String contentType = Headers.formUrlEncodedContentType,
+    CancelToken? cancelToken,
     required ApiDataDecoder<T> decode,
   }) {
     return request(
@@ -121,6 +148,7 @@ class ApiClient {
       data: data,
       queryParameters: queryParameters,
       contentType: contentType,
+      cancelToken: cancelToken,
       decode: decode,
     );
   }
@@ -131,6 +159,7 @@ class ApiClient {
     Object? data,
     Map<String, Object?>? queryParameters,
     String? contentType,
+    CancelToken? cancelToken,
     required ApiDataDecoder<T> decode,
   }) async {
     try {
@@ -143,9 +172,13 @@ class ApiClient {
         data: data,
         queryParameters: signedQuery,
         options: Options(method: method, contentType: contentType),
+        cancelToken: cancelToken,
       );
       return _decode(response.data, decode);
-    } on ApiException {
+    } on ApiException catch (error) {
+      if (error.type == ApiFailureType.authentication) {
+        await sessionExpiryCoordinator?.handleExpiredSession();
+      }
       rethrow;
     } on DioException catch (error) {
       throw _mapDioException(error);

@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,5 +59,41 @@ void main() {
 
     final adapter = dio.httpClientAdapter as IOHttpClientAdapter;
     expect(adapter.createHttpClient, isNotNull);
+  });
+
+  test('routes an HTTP request through the configured proxy', () async {
+    final proxy = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(proxy.close);
+    final requestLine = Completer<String>();
+    proxy.listen((socket) {
+      var text = '';
+      socket.listen((data) {
+        text += utf8.decode(data);
+        if (!text.contains('\r\n\r\n')) return;
+        if (!requestLine.isCompleted) {
+          requestLine.complete(text.split('\r\n').first);
+        }
+        socket.write(
+          'HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK',
+        );
+        socket.close();
+      });
+    });
+    final dio = Dio();
+    addTearDown(dio.close);
+    CaptureAdapter.configure(
+      dio,
+      proxyHost: InternetAddress.loopbackIPv4.address,
+      proxyPort: proxy.port,
+      allowBadCertificates: false,
+    );
+
+    final response = await dio.get<String>('http://example.test/capture');
+
+    expect(response.data, 'OK');
+    expect(
+      await requestLine.future,
+      'GET http://example.test/capture HTTP/1.1',
+    );
   });
 }
