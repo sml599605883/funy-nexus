@@ -4,7 +4,7 @@ abstract final class AppAssets {
   static const loginBanner = 'assets/login_banner.png';
   static const loginLogo = 'assets/login_logo.png';
 
-  static const homeLoanHero = 'assets/02-01 - 首页-默认@3x.png';
+  static const homeLoanHero = 'assets/home_loan_hero.png';
   static const homeChatIcon = 'assets/chat_icon.png';
   static const homePromoBanner = 'assets/home_promo_banner.png';
 

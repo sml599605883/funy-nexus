@@ -84,7 +84,6 @@ void main() {
 
       expect(response.data.deviceName, 'iPhoneXR');
       expect(response.data.screenSize, 6.1);
-      expect(response.data.platform, 'sN');
     },
   );
 

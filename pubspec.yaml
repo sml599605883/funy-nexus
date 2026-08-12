@@ -68,13 +68,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/login_agreement_checked.png
-    - assets/login_agreement_unchecked.png
-    - assets/login_banner.png
-    - assets/login_logo.png
-    - "assets/02-01 - 首页-默认@3x.png"
-    - assets/chat_icon.png
-    - assets/home_promo_banner.png
+    - assets/
     - assets/tabbar/
 
   # To add assets to your application, add an assets section, like this:
