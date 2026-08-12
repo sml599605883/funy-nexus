@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
+import 'package:fund_nexus/core/device/device_name_data.dart';
+import 'package:fund_nexus/core/json/json.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
 import 'package:fund_nexus/core/network/api_protocol.dart';
 import 'package:fund_nexus/core/network/api_public_params.dart';
@@ -60,6 +62,31 @@ void main() {
     expect(capturedRequest.queryParameters['page'], 1);
     expect(capturedRequest.queryParameters['hoods'], hasLength(64));
   });
+
+  test(
+    'parses the documented device-name response code as an integer',
+    () async {
+      final client = _client(
+        sessionStore,
+        (_) => _jsonResponse({
+          'fasciitis': '00',
+          'bravo': 'success',
+          'foresight': {'V31enQ': 'sN', 'nutlike': 'iPhoneXR', 'gumdrop': 6.1},
+        }),
+      );
+      addTearDown(client.close);
+
+      final response = await client.post<DeviceNameData>(
+        '/viler/resite',
+        data: const {'emit': 'iPhone11,8'},
+        decode: (data) => DeviceNameData.fromJson(Json(data)),
+      );
+
+      expect(response.data.deviceName, 'iPhoneXR');
+      expect(response.data.screenSize, 6.1);
+      expect(response.data.platform, 'sN');
+    },
+  );
 
   test('sends an empty coccolith while logged out', () async {
     late RequestOptions capturedRequest;

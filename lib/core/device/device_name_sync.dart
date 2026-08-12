@@ -1,4 +1,6 @@
+import 'package:fund_nexus/core/device/device_name_data.dart';
 import 'package:fund_nexus/core/device/device_metadata_store.dart';
+import 'package:fund_nexus/core/json/json.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/api_signature.dart';
@@ -40,18 +42,11 @@ class DeviceNameSync {
     ApiClient apiClient,
     String deviceCode,
   ) async {
-    final response = await apiClient.post<Map<String, Object?>>(
+    final response = await apiClient.post<DeviceNameData>(
       '/viler/resite',
       data: {'emit': deviceCode, 'outpreen': ApiSignature.randomDigits(6)},
-      decode: _decodeMap,
+      decode: (data) => DeviceNameData.fromJson(Json(data)),
     );
-    return response.data['nutlike']?.toString();
-  }
-
-  static Map<String, Object?> _decodeMap(Object? value) {
-    if (value is! Map) {
-      throw const FormatException('Device response data must be a JSON object');
-    }
-    return value.map((key, value) => MapEntry(key.toString(), value));
+    return response.data.deviceName;
   }
 }

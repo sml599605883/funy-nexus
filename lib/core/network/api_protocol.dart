@@ -13,7 +13,18 @@ class ApiProtocol {
   final Set<String> successCodes;
   final String authExpiredCode;
 
-  bool isSuccess(Object? code) => successCodes.contains(code?.toString());
+  bool isSuccess(Object? code) {
+    final value = code?.toString();
+    if (successCodes.contains(value)) {
+      return true;
+    }
+
+    final numericCode = int.tryParse(value ?? '');
+    return numericCode != null &&
+        successCodes.any(
+          (successCode) => int.tryParse(successCode) == numericCode,
+        );
+  }
 
   bool isAuthExpired(Object? code) => code?.toString() == authExpiredCode;
 }
