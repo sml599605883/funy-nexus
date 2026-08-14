@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:fund_nexus/app/app.dart';
+import 'package:fund_nexus/app/startup/startup_network_gate.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/device/device_metadata_store.dart';
 import 'package:fund_nexus/core/device/device_name_sync.dart';
@@ -42,19 +43,26 @@ Future<void> main() async {
     iv: config.encryptionIv,
   );
 
-  await DeviceNameSync(
-    apiClient: apiClient,
-    publicParamsProvider: publicParamsProvider,
-    metadataStore: deviceMetadataStore,
-  ).sync();
-
   runApp(
-    FundNexusApp(
-      apiClient: apiClient,
-      apiCrypto: apiCrypto,
-      config: config,
-      sessionStore: sessionStore,
-      sessionExpiryCoordinator: sessionExpiryCoordinator,
+    StartupNetworkGate(
+      probe: () async {
+        final available = await probeApiTransport(apiClient);
+        if (available) {
+          await DeviceNameSync(
+            apiClient: apiClient,
+            publicParamsProvider: publicParamsProvider,
+            metadataStore: deviceMetadataStore,
+          ).sync();
+        }
+        return available;
+      },
+      readyBuilder: () => FundNexusApp(
+        apiClient: apiClient,
+        apiCrypto: apiCrypto,
+        config: config,
+        sessionStore: sessionStore,
+        sessionExpiryCoordinator: sessionExpiryCoordinator,
+      ),
     ),
   );
 }

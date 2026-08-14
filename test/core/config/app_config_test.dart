@@ -82,8 +82,37 @@ void main() {
     );
   });
 
-  test('does not provide source-controlled runtime credentials', () {
-    expect(AppConfig.fromEnvironment, throwsArgumentError);
+  test('uses the bundled API credentials by default', () {
+    final config = AppConfig.fromEnvironment();
+
+    expect(config.signingSecret, isNotEmpty);
+    expect(config.encryptionKey, hasLength(16));
+    expect(config.encryptionIv, hasLength(16));
+  });
+
+  test('requires credentials in production', () {
+    expect(
+      () => AppConfig(
+        environment: AppEnvironment.production,
+        baseUrl: Uri.parse('https://api.example.com'),
+        webBaseUrl: Uri.parse('https://web.example.com'),
+        signingSecret: '',
+        encryptionKey: '0123456789abcdef',
+        encryptionIv: 'abcdef9876543210',
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => AppConfig(
+        environment: AppEnvironment.production,
+        baseUrl: Uri.parse('https://api.example.com'),
+        webBaseUrl: Uri.parse('https://web.example.com'),
+        signingSecret: 'secret',
+        encryptionKey: '',
+        encryptionIv: '',
+      ),
+      throwsArgumentError,
+    );
   });
 
   test('accepts an explicit development capture proxy', () {

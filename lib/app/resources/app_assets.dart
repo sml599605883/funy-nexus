@@ -8,6 +8,17 @@ abstract final class AppAssets {
   static const homeChatIcon = 'assets/chat_icon.png';
   static const homePromoBanner = 'assets/home_promo_banner.png';
 
+  static const identityVerificationBackground =
+      'assets/identity_verification_background.png';
+  static const identityBackButton = 'assets/identity_back_button.png';
+  static const identitySectionDecorationLeading =
+      'assets/identity_section_decoration_leading.png';
+  static const identitySectionDecorationTrailing =
+      'assets/identity_section_decoration_trailing.png';
+  static const identityUploadBackground =
+      'assets/identity_upload_background.png';
+  static const identityUploadExamples = 'assets/identity_upload_examples.png';
+
   static const mineOrderAll = 'assets/mine_orders_all.png';
   static const mineOrderUnpaid = 'assets/mine_orders_unpaid.png';
   static const mineOrderLate = 'assets/mine_orders_late.png';
@@ -20,6 +31,8 @@ abstract final class AppAssets {
   static const mineChevron = 'assets/mine_chevron.png';
   static const mineSectionTitleMarker = 'assets/mine_section_title_marker.png';
   static const mineAccountPanelClose = 'assets/mine_account_panel_close.png';
+  static const networkErrorIllustration =
+      'assets/network_error_illustration.png';
   static const mineLogoutRetentionDialog =
       'assets/mine_logout_retention_dialog.png';
   static const mineDeleteAccountRetentionDialog =

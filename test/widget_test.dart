@@ -156,7 +156,7 @@ void main() {
     expect(homeRequestCount, 2);
   });
 
-  testWidgets('lifecycle refresh matches Dali Home visibility rules', (
+  testWidgets('lifecycle refresh matches MP Home visibility rules', (
     tester,
   ) async {
     var homeRequestCount = 0;
@@ -179,24 +179,24 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(homeRequestCount, 2);
+    expect(homeRequestCount, 1);
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(homeRequestCount, 2);
+    expect(homeRequestCount, 1);
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(homeRequestCount, 3);
+    expect(homeRequestCount, 2);
 
     await tester.tap(find.byKey(const Key('tab-progress')));
     await tester.pumpAndSettle();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(homeRequestCount, 3);
+    expect(homeRequestCount, 2);
   });
 }
 

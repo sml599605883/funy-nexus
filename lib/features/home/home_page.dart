@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/state/async_state.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/home/widgets/home_content.dart';
+import 'package:fund_nexus/features/login/login_page.dart';
+import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
+import 'package:fund_nexus/features/product/credit_review/credit_review_page.dart';
+import 'package:fund_nexus/features/product/state/product_application_flow.dart';
+import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -34,6 +40,7 @@ class HomePage extends StatelessWidget {
           return HomeContent(
             data: data,
             onRefresh: context.read<HomeCubit>().load,
+            onApply: (card) => _apply(context, card),
           );
         }
         if (previousData != null) {
@@ -43,6 +50,7 @@ class HomePage extends StatelessWidget {
                 HomeContent(
                   data: previousData,
                   onRefresh: context.read<HomeCubit>().load,
+                  onApply: (card) => _apply(context, card),
                 ),
                 Positioned(
                   left: 0,
@@ -56,6 +64,7 @@ class HomePage extends StatelessWidget {
           return HomeContent(
             data: previousData,
             onRefresh: context.read<HomeCubit>().load,
+            onApply: (card) => _apply(context, card),
           );
         }
         if (state is AsyncFailure<HomeData>) {
@@ -73,6 +82,58 @@ class HomePage extends StatelessWidget {
         return const _HomeStatusView();
       },
     );
+  }
+
+  Future<void> _apply(BuildContext context, HomeCardData card) {
+    return context.read<ProductApplicationFlow>().apply(
+      productId: card.productId,
+      openLogin: (productId) async {
+        if (!context.mounted) return false;
+        return await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(builder: (_) => const LoginPage()),
+            ) ??
+            false;
+      },
+      openTarget: (target) => _openWebTarget(context, target),
+      openCreditReview: (_) async {
+        if (!context.mounted) return;
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => CreditReviewPage(productId: card.productId),
+          ),
+        );
+      },
+      openCertification: (step, productId) async {
+        if (!context.mounted) return;
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                CertificationHandoffPage(productId: productId, step: step),
+          ),
+        );
+      },
+      showLoading: () => EasyLoading.show(status: 'Loading...'),
+      dismissLoading: EasyLoading.dismiss,
+      showMessage: (message) => _showMessage(context, message),
+    );
+  }
+
+  Future<void> _openWebTarget(BuildContext context, String target) async {
+    if (ProductWebPage.validUri(target) == null) {
+      await _showMessage(context, 'Unable to open the requested page.');
+      return;
+    }
+    if (!context.mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => ProductWebPage(url: target)),
+    );
+  }
+
+  Future<void> _showMessage(BuildContext context, String message) async {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

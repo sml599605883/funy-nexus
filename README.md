@@ -38,8 +38,8 @@ flutter run \
   --dart-define=CAPTURE_ALLOW_BAD_CERTIFICATES=true
 ```
 
-The signing and AES values have no source-controlled defaults. Every build
-must provide them through the build environment; do not commit real values.
+The app has bundled API signing and AES defaults. Build-time `dart-define`
+values override them when a different environment requires separate keys.
 
 Every request reloads the installed app version, iOS model code, and system
 version. The first available IDFV is persisted in the device-only Keychain and

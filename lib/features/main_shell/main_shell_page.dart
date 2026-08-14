@@ -32,9 +32,7 @@ class _MainShellPageState extends State<MainShellPage>
     with WidgetsBindingObserver, RouteAware {
   bool _openingLogin = false;
   bool _routeVisible = true;
-  bool _wasInactive = false;
   bool _wasInBackground = false;
-  bool _inactiveResumeRefreshConsumed = false;
   PageRoute<dynamic>? _subscribedRoute;
   StreamSubscription<void>? _sessionExpirySubscription;
 
@@ -102,10 +100,6 @@ class _MainShellPageState extends State<MainShellPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive) {
-      _wasInactive = true;
-      return;
-    }
     if (state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused) {
       _wasInBackground = true;
@@ -114,13 +108,8 @@ class _MainShellPageState extends State<MainShellPage>
     if (state != AppLifecycleState.resumed) return;
 
     final resumedFromBackground = _wasInBackground;
-    final firstInactiveResume = _wasInactive && !_inactiveResumeRefreshConsumed;
-    _wasInactive = false;
     _wasInBackground = false;
-    if (!resumedFromBackground && !firstInactiveResume) return;
-    if (!resumedFromBackground) {
-      _inactiveResumeRefreshConsumed = true;
-    }
+    if (!resumedFromBackground) return;
     _refreshHomeIfVisible();
   }
 

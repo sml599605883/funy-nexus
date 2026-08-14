@@ -2,13 +2,20 @@ class HomeData {
   const HomeData({
     required this.hasSections,
     this.customerService,
+    this.banners = const [],
     this.banner,
     this.primaryCard,
   });
 
   final bool hasSections;
   final HomeCustomerService? customerService;
+  final List<HomeBannerData> banners;
+
+  /// Retained for existing callers that need the first server banner.
   final HomeBannerData? banner;
+
+  List<HomeBannerData> get promoBanners =>
+      banners.isEmpty && banner != null ? [banner!] : banners;
   final HomeCardData? primaryCard;
 
   bool get isEmpty => !hasSections;
@@ -23,7 +30,7 @@ class HomeData {
       throw const FormatException('Home sections must be a JSON array');
     }
 
-    HomeBannerData? banner;
+    List<HomeBannerData> banners = const [];
     HomeCardData? primaryCard;
     for (final sectionValue in sectionsValue) {
       if (sectionValue is! Map) continue;
@@ -32,8 +39,11 @@ class HomeData {
       final items = section['mycetozoan'];
       if (items is! List || items.isEmpty) continue;
 
-      if (banner == null && _bannerTypes.contains(type)) {
-        banner = HomeBannerData.fromJson(items.first);
+      if (banners.isEmpty && _bannerTypes.contains(type)) {
+        banners = items
+            .map(HomeBannerData.fromJson)
+            .whereType<HomeBannerData>()
+            .toList(growable: false);
       }
       if (primaryCard == null && _largeCardTypes.contains(type)) {
         primaryCard = HomeCardData.fromJson(items.first);
@@ -43,7 +53,8 @@ class HomeData {
     return HomeData(
       hasSections: sectionsValue.isNotEmpty,
       customerService: HomeCustomerService.fromJson(json['chippered']),
-      banner: banner,
+      banners: banners,
+      banner: banners.isEmpty ? null : banners.first,
       primaryCard: primaryCard,
     );
   }

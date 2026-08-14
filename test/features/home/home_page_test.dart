@@ -145,4 +145,104 @@ void main() {
     expect(find.text('180 Days'), findsNothing);
     expect(find.text('Apply Now'), findsNothing);
   });
+
+  testWidgets('applies from any area of the large loan card', (tester) async {
+    var applyCount = 0;
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResponsiveScope(
+          child: Scaffold(
+            body: HomeContent(
+              data: const HomeData(
+                hasSections: true,
+                primaryCard: HomeCardData(
+                  productId: '101',
+                  productName: 'Maya Agad',
+                  productLogo: '',
+                  amount: 'PHP 88,888',
+                  amountLabel: 'Available up to',
+                  loanTerm: '90 Days',
+                  loanTermLabel: 'Loan terms',
+                  interestRate: '0.3% Day',
+                  interestRateLabel: 'Interest rate',
+                  description: 'Cash hits fast.',
+                  actionText: 'Apply Now',
+                ),
+              ),
+              onApply: (_) => applyCount++,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('home-product-identity')));
+    await tester.pump();
+    expect(applyCount, 1);
+
+    await tester.tap(find.byKey(const Key('home-apply-button')));
+    await tester.pump();
+    expect(applyCount, 2);
+  });
+
+  testWidgets('cycles through all server banners', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ResponsiveScope(
+          child: Scaffold(
+            body: HomeContent(
+              data: HomeData(
+                hasSections: true,
+                banners: [
+                  HomeBannerData(
+                    id: 'first',
+                    target: '',
+                    imageUrl: 'https://example.com/first.png',
+                  ),
+                  HomeBannerData(
+                    id: 'second',
+                    target: '',
+                    imageUrl: 'https://example.com/second.png',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(PageView), findsOneWidget);
+    expect(
+      tester
+          .widget<Image>(
+            find.descendant(
+              of: find.byKey(const Key('home-promo-banner-image-0')),
+              matching: find.byType(Image),
+            ),
+          )
+          .image,
+      const NetworkImage('https://example.com/first.png'),
+    );
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      tester
+          .widget<Image>(
+            find.descendant(
+              of: find.byKey(const Key('home-promo-banner-image-1')),
+              matching: find.byType(Image),
+            ),
+          )
+          .image,
+      const NetworkImage('https://example.com/second.png'),
+    );
+  });
 }

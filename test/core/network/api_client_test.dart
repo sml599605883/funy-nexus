@@ -13,6 +13,7 @@ import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/api_signature.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/home/data/home_repository.dart';
+import 'package:fund_nexus/features/product/data/product_repository.dart';
 
 void main() {
   late _MemorySessionPersistence persistence;
@@ -143,6 +144,78 @@ void main() {
     expect(capturedRequest.queryParameters['rarefiers'], hasLength(6));
     expect(data.primaryCard?.amount, '₱60,000');
   });
+
+  test(
+    'uses documented Fund Nexus product admission and detail contracts',
+    () async {
+      final requests = <RequestOptions>[];
+      final client = _client(sessionStore, (request) {
+        requests.add(request);
+        return switch (request.path) {
+          '/viler/pelvis' => _successResponse({
+            'trokes': 200,
+            'redepositing': '',
+            'hygieists': '',
+          }),
+          '/viler/commenting' => _successResponse({
+            'trokes': 200,
+            'supramolecular': const {},
+            'metheglins': const {},
+          }),
+          _ => _successResponse({'redepositing': 'https://web.example.com'}),
+        };
+      });
+      addTearDown(client.close);
+      final repository = ProductRepository(apiClient: client);
+
+      await repository.requestAdmission('product-1');
+      await repository.fetchProductDetail('product-1');
+      await repository.fetchIdentityOptions('product-1');
+      await repository.fetchCreditReview();
+      await repository.fetchLoanDestination(
+        orderNumber: 'ORDER-1',
+        amount: '1000.00',
+        loanTerm: '7',
+        termType: '1',
+      );
+
+      expect(requests[0].path, '/viler/pelvis');
+      expect(requests[0].data, {
+        'metageneses': '1001',
+        'servitude': '1000',
+        'explantation': '1000',
+        'modernised': 'product-1',
+        'nonpermissive': '0',
+        'disaggregate': hasLength(6),
+        'coccyx': hasLength(6),
+      });
+      expect(requests[1].path, '/viler/commenting');
+      expect(requests[1].data, {
+        'modernised': 'product-1',
+        'xerophily': hasLength(6),
+        'tragedienne': hasLength(6),
+        'impowering': hasLength(6),
+      });
+      expect(requests[2].method, 'GET');
+      expect(requests[2].path, '/viler/invital');
+      expect(requests[2].queryParameters['modernised'], 'product-1');
+      expect(requests[2].queryParameters['pacification'], hasLength(6));
+      expect(requests[3].method, 'GET');
+      expect(requests[3].path, '/viler/pepperboxes');
+      expect(requests[3].queryParameters['underheat'], hasLength(6));
+      expect(requests[4].path, '/viler/remediation');
+      expect(requests[4].data, {
+        'clipsheet': 'ORDER-1',
+        'breaststrokers': '1000.00',
+        'germicides': '7',
+        'nominees': '1',
+        'substantive': hasLength(6),
+        'inquiry': hasLength(6),
+        'shocker': hasLength(6),
+        'parbake': hasLength(6),
+      });
+    },
+  );
 
   test('uses the documented Fund Nexus login request contracts', () async {
     final requests = <RequestOptions>[];
@@ -341,15 +414,25 @@ void main() {
     );
   });
 
-  test('rejects an unsigned client configuration', () {
-    expect(
-      () => _client(
-        sessionStore,
-        (_) => _successResponse(null),
-        signingSecret: '',
+  test('does not send unsigned requests', () async {
+    var requestCount = 0;
+    final client = _client(sessionStore, (_) {
+      requestCount++;
+      return _successResponse(null);
+    }, signingSecret: '');
+    addTearDown(client.close);
+
+    await expectLater(
+      client.get<void>('/viler/profile', decode: (_) {}),
+      throwsA(
+        isA<ApiException>().having(
+          (error) => error.type,
+          'type',
+          ApiFailureType.configuration,
+        ),
       ),
-      throwsArgumentError,
     );
+    expect(requestCount, 0);
   });
 
   test('does not allow business query to override public params', () async {
@@ -404,6 +487,32 @@ void main() {
       );
     }
   });
+
+  test('treats every HTTP response as reachable transport', () async {
+    final client = _client(
+      sessionStore,
+      (_) => _jsonResponse('maintenance', statusCode: 503),
+    );
+    addTearDown(client.close);
+
+    expect(await client.probeTransport(), isTrue);
+  });
+
+  test(
+    'treats a transport error without an HTTP response as unavailable',
+    () async {
+      final client = _client(
+        sessionStore,
+        (request) => throw DioException(
+          requestOptions: request,
+          type: DioExceptionType.connectionError,
+        ),
+      );
+      addTearDown(client.close);
+
+      expect(await client.probeTransport(), isFalse);
+    },
+  );
 
   test('supports cancelling a request before transport', () async {
     final client = _client(sessionStore, (_) => _successResponse(null));

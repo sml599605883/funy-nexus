@@ -17,6 +17,11 @@ void main() {
               'redepositing': 'app://banner',
               'closets': 'https://example.com/banner.png',
             },
+            {
+              'ecclesia': 9,
+              'redepositing': 'app://second-banner',
+              'closets': 'https://example.com/banner-2.png',
+            },
           ],
         },
         {
@@ -63,6 +68,7 @@ void main() {
     expect(data.customerService?.target, 'https://example.com/support');
     expect(data.banner?.id, '8');
     expect(data.banner?.imageUrl, 'https://example.com/banner.png');
+    expect(data.banners.map((banner) => banner.id), ['8', '9']);
     expect(data.primaryCard?.productId, '101');
     expect(data.primaryCard?.productLogo, 'https://example.com/product.png');
     expect(data.primaryCard?.amount, '₱50,000');

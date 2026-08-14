@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/core/network/api_crypto.dart';
+import 'package:fund_nexus/core/network/api_exception.dart';
 
 void main() {
   final crypto = ApiCrypto(key: '0123456789abcdef', iv: 'abcdef9876543210');
@@ -22,5 +23,12 @@ void main() {
       crypto.encryptJson(const {'hello': 'Fund Nexus'}),
       'NWGrTMZYt8L0Wez0xK2chFmSU6NwH4J5O/4wGNXwJJw=',
     );
+  });
+
+  test('can be constructed without development credentials', () {
+    final crypto = ApiCrypto(key: '', iv: '');
+
+    expect(crypto.isConfigured, isFalse);
+    expect(() => crypto.encryptText('payload'), throwsA(isA<ApiException>()));
   });
 }

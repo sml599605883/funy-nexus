@@ -70,6 +70,21 @@ class ApiClient {
   final SessionExpiryCoordinator? sessionExpiryCoordinator;
   final ApiProtocol protocol;
 
+  Future<bool> probeTransport() async {
+    try {
+      final response = await _dio.getUri<String>(
+        Uri.parse(_dio.options.baseUrl),
+        options: Options(
+          responseType: ResponseType.plain,
+          validateStatus: (_) => true,
+        ),
+      );
+      return response.statusCode != null;
+    } on DioException catch (error) {
+      return error.response?.statusCode != null;
+    }
+  }
+
   Future<ApiResponse<void>> sendLoginSmsCode({required String phone}) {
     return post<void>(
       '/viler/ethanols',

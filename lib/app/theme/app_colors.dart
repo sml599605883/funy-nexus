@@ -24,6 +24,13 @@ abstract final class AppColors {
   static const homeApplyTrack = Color.fromRGBO(176, 242, 221, 1);
   static const homeApplyButtonStart = Color.fromRGBO(39, 212, 167, 1);
   static const homeApplyButtonEnd = Color.fromRGBO(53, 192, 145, 1);
+  static const identitySectionSurface = Color.fromRGBO(255, 255, 255, 1);
+  static const identitySectionGradientEnd = Color.fromRGBO(226, 255, 247, 1);
+  static const identityTitle = Color.fromRGBO(51, 51, 51, 1);
+  static const identityItemText = Color.fromRGBO(38, 65, 7, 1);
+  static const identityDivider = Color.fromRGBO(189, 189, 162, 1);
+  static const identityUploadGuidance = Color.fromRGBO(38, 110, 86, 1);
+  static const identityUploadButtonShadow = Color.fromRGBO(171, 235, 214, 0.63);
   static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
   static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);
