@@ -168,6 +168,24 @@ class ApiClient {
     );
   }
 
+  Future<ApiResponse<T>> postMultipart<T>(
+    String path, {
+    required FormData data,
+    Map<String, Object?>? queryParameters,
+    CancelToken? cancelToken,
+    required ApiDataDecoder<T> decode,
+  }) {
+    return request(
+      path,
+      method: 'POST',
+      data: data,
+      queryParameters: queryParameters,
+      contentType: Headers.multipartFormDataContentType,
+      cancelToken: cancelToken,
+      decode: decode,
+    );
+  }
+
   Future<ApiResponse<T>> request<T>(
     String path, {
     required String method,

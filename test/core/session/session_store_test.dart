@@ -61,6 +61,39 @@ void main() {
     expect(store.isAuthenticated, isFalse);
   });
 
+  test(
+    'keeps product detail guidance in memory and clears it with session',
+    () async {
+      final store = SessionStore(_MemorySessionPersistence());
+      store.cacheProductDetailIdentityGuidance('  Please confirm your ID.  ');
+
+      expect(store.productDetailIdentityGuidance, 'Please confirm your ID.');
+
+      await store.clear();
+
+      expect(store.productDetailIdentityGuidance, isEmpty);
+    },
+  );
+
+  test(
+    'keeps face guidance and order context in memory for certification',
+    () async {
+      final store = SessionStore(_MemorySessionPersistence());
+      store.cacheProductDetailCertification(
+        identityGuidance: 'Upload your ID.',
+        faceGuidance: 'Keep your face in the frame.',
+        orderNumber: 'ORDER-42',
+      );
+
+      expect(store.productDetailFaceGuidance, 'Keep your face in the frame.');
+      expect(store.productDetailOrderNumber, 'ORDER-42');
+
+      await store.clear();
+      expect(store.productDetailFaceGuidance, isEmpty);
+      expect(store.productDetailOrderNumber, isEmpty);
+    },
+  );
+
   test('clear can remove all persisted session data', () async {
     final persistence = _MemorySessionPersistence();
     final store = SessionStore(persistence);

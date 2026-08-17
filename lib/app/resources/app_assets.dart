@@ -18,6 +18,7 @@ abstract final class AppAssets {
   static const identityUploadBackground =
       'assets/identity_upload_background.png';
   static const identityUploadExamples = 'assets/identity_upload_examples.png';
+  static const identityFaceExamples = 'assets/identity_face_examples.png';
 
   static const mineOrderAll = 'assets/mine_orders_all.png';
   static const mineOrderUnpaid = 'assets/mine_orders_unpaid.png';

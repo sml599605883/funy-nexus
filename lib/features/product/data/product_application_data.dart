@@ -74,15 +74,20 @@ class ProductDetailData {
 }
 
 class ProductCertificationCopy {
-  const ProductCertificationCopy({this.identityUploadGuidance = ''});
+  const ProductCertificationCopy({
+    this.identityUploadGuidance = '',
+    this.faceVerificationGuidance = '',
+  });
 
   factory ProductCertificationCopy.fromJson(Json json) {
     return ProductCertificationCopy(
       identityUploadGuidance: json['qintar'].stringValue.trim(),
+      faceVerificationGuidance: json['dissyllables'].stringValue.trim(),
     );
   }
 
   final String identityUploadGuidance;
+  final String faceVerificationGuidance;
 }
 
 class ProductDetailProduct {
@@ -148,6 +153,57 @@ class LoanDestinationData {
   }
 
   final String target;
+}
+
+class IdentityRecognitionData {
+  const IdentityRecognitionData({
+    required this.fullName,
+    required this.idNumber,
+    required this.gender,
+    required this.dateOfBirth,
+    required this.imageUrl,
+  });
+
+  factory IdentityRecognitionData.fromJson(Object? data) {
+    final json = Json(data);
+    return IdentityRecognitionData(
+      fullName: json['emit'].stringValue.trim(),
+      idNumber: json['outdueled'].stringValue.trim(),
+      gender: json['matcher'].stringValue.trim(),
+      dateOfBirth: json['palisades'].stringValue.trim(),
+      imageUrl: json['redepositing'].stringValue.trim(),
+    );
+  }
+
+  final String fullName;
+  final String idNumber;
+  final String gender;
+  final String dateOfBirth;
+  final String imageUrl;
+}
+
+class FaceLivenessToken {
+  const FaceLivenessToken({
+    required this.resultCode,
+    required this.license,
+    required this.errorMessage,
+    required this.livenessType,
+  });
+
+  factory FaceLivenessToken.fromJson(Object? data) {
+    final json = Json(data);
+    return FaceLivenessToken(
+      resultCode: json['bootees'].stringValue.trim(),
+      license: json['reimplants'].stringValue.trim(),
+      errorMessage: json['girandola'].stringValue.trim(),
+      livenessType: json['wealthily'].numValue.toInt(),
+    );
+  }
+
+  final String resultCode;
+  final String license;
+  final String errorMessage;
+  final int livenessType;
 }
 
 class ProductIdentityData {

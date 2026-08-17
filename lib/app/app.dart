@@ -47,6 +47,10 @@ class FundNexusApp extends StatelessWidget {
         RepositoryProvider<ProductGateway>(
           create: (_) => ProductRepository(apiClient: apiClient),
         ),
+        RepositoryProvider<FaceVerificationGateway>(
+          create: (context) =>
+              context.read<ProductGateway>() as FaceVerificationGateway,
+        ),
         RepositoryProvider<PermissionCoordinator>.value(
           value: PermissionCoordinator.instance,
         ),

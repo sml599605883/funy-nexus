@@ -60,10 +60,30 @@ class SessionStore {
 
   String? _phone;
   String? _sessionId;
+  String _productDetailIdentityGuidance = '';
+  String _productDetailFaceGuidance = '';
+  String _productDetailOrderNumber = '';
 
   String? get phone => _phone;
   String? get sessionId => _sessionId;
   bool get isAuthenticated => _sessionId?.isNotEmpty ?? false;
+  String get productDetailIdentityGuidance => _productDetailIdentityGuidance;
+  String get productDetailFaceGuidance => _productDetailFaceGuidance;
+  String get productDetailOrderNumber => _productDetailOrderNumber;
+
+  void cacheProductDetailIdentityGuidance(String value) {
+    _productDetailIdentityGuidance = value.trim();
+  }
+
+  void cacheProductDetailCertification({
+    required String identityGuidance,
+    required String faceGuidance,
+    required String orderNumber,
+  }) {
+    _productDetailIdentityGuidance = identityGuidance.trim();
+    _productDetailFaceGuidance = faceGuidance.trim();
+    _productDetailOrderNumber = orderNumber.trim();
+  }
 
   Future<void> restore() async {
     final values = await Future.wait([
@@ -102,6 +122,9 @@ class SessionStore {
       _phone = null;
     }
     _sessionId = null;
+    _productDetailIdentityGuidance = '';
+    _productDetailFaceGuidance = '';
+    _productDetailOrderNumber = '';
   }
 
   static String? _normalize(String? value) {

@@ -1,51 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
+import 'package:fund_nexus/features/product/certification/identity_confirmation_page.dart';
+import 'package:fund_nexus/features/product/certification/identity_upload_image_service.dart';
+import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
+import 'package:fund_nexus/features/product/certification/identity_upload_method.dart';
+import 'package:fund_nexus/features/product/certification/widgets/identity_upload_method_panel.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
+import 'package:fund_nexus/features/product/state/product_application_flow.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class IdentityUploadPage extends StatefulWidget {
   const IdentityUploadPage({
     required this.productId,
     required this.identityType,
+    this.imagePicker,
+    this.imageCompressor,
+    this.permissions,
+    this.gateway,
+    this.promptMessage = '',
     super.key,
   });
 
   final String productId;
   final String identityType;
+  final IdentityUploadImagePicker? imagePicker;
+  final IdentityUploadImageCompressor? imageCompressor;
+  final PermissionCoordinator? permissions;
+  final ProductGateway? gateway;
+  final String promptMessage;
 
   @override
   State<IdentityUploadPage> createState() => _IdentityUploadPageState();
 }
 
 class _IdentityUploadPageState extends State<IdentityUploadPage> {
-  String? _guidance;
+  bool _isUploading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadGuidance();
-  }
-
-  Future<void> _loadGuidance() async {
-    try {
-      final detail = await context.read<ProductGateway>().fetchProductDetail(
-        widget.productId,
-      );
-      if (!mounted) return;
-      setState(
-        () => _guidance = detail.certificationCopy.identityUploadGuidance,
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _guidance = '');
-    }
-  }
+  late final IdentityUploadImagePicker _imagePicker =
+      widget.imagePicker ?? DefaultIdentityUploadImagePicker();
+  late final IdentityUploadImageCompressor _imageCompressor =
+      widget.imageCompressor ?? DefaultIdentityUploadImageCompressor();
 
   @override
   Widget build(BuildContext context) {
-    final guidance = _guidance;
+    final guidance = widget.promptMessage.trim();
     return Scaffold(
       extendBody: true,
       body: Stack(
@@ -71,9 +74,7 @@ class _IdentityUploadPageState extends State<IdentityUploadPage> {
                             key: const Key('identityUploadGuidance'),
                             height: context.r(57),
                             width: double.infinity,
-                            child: guidance == null
-                                ? null
-                                : _AdaptiveGuidance(text: guidance),
+                            child: _AdaptiveGuidance(text: guidance),
                           ),
                         ),
                         SizedBox(height: context.r(31)),
@@ -102,12 +103,130 @@ class _IdentityUploadPageState extends State<IdentityUploadPage> {
             context.r(22),
           ),
           child: _UploadButton(
-            onPressed: () =>
-                debugPrint('Identity upload requested: ${widget.identityType}'),
+            enabled: !_isUploading,
+            onPressed: _showUploadMethodSheet,
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _continueAfterIdentity(String productId) async {
+    if (!mounted) return;
+    final flow = context.read<ProductApplicationFlow>();
+    await Navigator.of(context).pushReplacement<void, bool>(
+      MaterialPageRoute<void>(
+        builder: (context) =>
+            IdentityUploadContinuationPage(flow: flow, productId: productId),
+      ),
+    );
+  }
+
+  Future<void> _showUploadMethodSheet() async {
+    if (_isUploading) return;
+    final method = await showIdentityUploadMethodPanel(context);
+    if (method == null || !mounted) return;
+
+    if (method == IdentityUploadMethod.camera) {
+      final permission =
+          widget.permissions ?? context.read<PermissionCoordinator>();
+      final status = await permission.requestCamera();
+      if (!mounted) return;
+      if (status != PermissionStatus.granted &&
+          status != PermissionStatus.limited) {
+        await _showPermissionDialog();
+        return;
+      }
+    }
+
+    setState(() => _isUploading = true);
+    await EasyLoading.show(status: 'Loading...');
+    final String? path;
+    try {
+      path = await _imagePicker.pick(method);
+    } catch (_) {
+      await EasyLoading.dismiss();
+      if (mounted) {
+        await EasyLoading.showError('Unable to select the identity image.');
+        setState(() => _isUploading = false);
+      }
+      return;
+    }
+    if (path == null || path.isEmpty || !mounted) {
+      await EasyLoading.dismiss();
+      if (mounted) setState(() => _isUploading = false);
+      return;
+    }
+    await _upload(path, method, loadingAlreadyShown: true);
+  }
+
+  Future<void> _showPermissionDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Allow Camera Access'),
+        content: const Text(
+          "We can't complete identity verification without camera access. "
+          'Enable the permission to continue your application securely.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await openAppSettings();
+            },
+            child: const Text('Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _upload(
+    String sourcePath,
+    IdentityUploadMethod method, {
+    bool loadingAlreadyShown = false,
+  }) async {
+    if (_isUploading && !loadingAlreadyShown) return;
+    final gateway = widget.gateway ?? context.read<ProductGateway>();
+    if (!loadingAlreadyShown) {
+      setState(() => _isUploading = true);
+      await EasyLoading.show(status: 'Loading...');
+    }
+    try {
+      final compressedPath = await _imageCompressor.compressToLimit(sourcePath);
+      if (compressedPath == null || compressedPath.isEmpty) {
+        throw StateError('Image compression failed');
+      }
+      final result = await gateway.uploadIdentityDocument(
+        filePath: compressedPath,
+        identityType: widget.identityType,
+        wasCapturedWithCamera: method == IdentityUploadMethod.camera,
+      );
+      await EasyLoading.dismiss();
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => IdentityConfirmationPage(
+            productId: widget.productId,
+            identityType: widget.identityType,
+            recognizedInfo: result,
+            promptMessage: widget.promptMessage.trim(),
+            onSaved: () => _continueAfterIdentity(widget.productId),
+          ),
+        ),
+      );
+    } catch (error) {
+      await EasyLoading.showError(
+        error is StateError ? error.message : 'Upload failed',
+      );
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
   }
 }
 
@@ -226,9 +345,10 @@ class _UploadHeader extends StatelessWidget {
 }
 
 class _UploadButton extends StatelessWidget {
-  const _UploadButton({required this.onPressed});
+  const _UploadButton({required this.onPressed, required this.enabled});
 
   final VoidCallback onPressed;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -246,20 +366,22 @@ class _UploadButton extends StatelessWidget {
               blurRadius: 2,
             ),
           ],
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.bottomLeft,
             end: Alignment.topRight,
-            colors: [
-              AppColors.homeApplyButtonStart,
-              AppColors.homeApplyButtonEnd,
-            ],
+            colors: enabled
+                ? const [
+                    AppColors.homeApplyButtonStart,
+                    AppColors.homeApplyButtonEnd,
+                  ]
+                : const [Colors.grey, Colors.grey],
           ),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(context.r(24)),
-            onTap: onPressed,
+            onTap: enabled ? onPressed : null,
             child: Center(
               child: Text(
                 'Upload',

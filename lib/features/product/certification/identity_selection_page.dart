@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_page.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
@@ -349,8 +350,13 @@ class _IdentityTypeRow extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
-            builder: (_) =>
-                IdentityUploadPage(productId: productId, identityType: type),
+            builder: (_) => IdentityUploadPage(
+              productId: productId,
+              identityType: type,
+              promptMessage: context
+                  .read<SessionStore>()
+                  .productDetailIdentityGuidance,
+            ),
           ),
         ),
         child: SizedBox(

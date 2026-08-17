@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/features/product/certification/face_verification_page.dart';
 import 'package:fund_nexus/features/product/certification/identity_selection_page.dart';
+import 'package:fund_nexus/features/product/certification/personal_information_page.dart';
 
 class CertificationHandoffPage extends StatelessWidget {
   const CertificationHandoffPage({
@@ -15,6 +19,17 @@ class CertificationHandoffPage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (step == 'public') {
       return IdentitySelectionPage(productId: productId);
+    }
+    if (step == 'personal') {
+      return PersonalInformationPage(productId: productId);
+    }
+    if (step == 'face') {
+      final session = context.read<SessionStore>();
+      return FaceVerificationPage(
+        productId: productId,
+        orderNumber: session.productDetailOrderNumber,
+        promptMessage: session.productDetailFaceGuidance,
+      );
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Complete your information')),

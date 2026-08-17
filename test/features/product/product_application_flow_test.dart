@@ -105,10 +105,20 @@ void main() {
             type: 'PygidiumAgmas',
             title: 'Personal',
           ),
+          certificationCopy: ProductCertificationCopy(
+            identityUploadGuidance: 'Use the cached product copy.',
+          ),
         ),
       );
       final steps = <String>[];
-      final flow = _authenticatedFlow(gateway);
+      final sessionStore = _session(authenticated: true);
+      final flow = ProductApplicationFlow(
+        repository: gateway,
+        sessionStore: sessionStore,
+        permissions: PermissionCoordinator(
+          requestLocation: () async => PermissionStatus.granted,
+        ),
+      );
 
       await flow.apply(
         productId: 'product-1',
@@ -124,6 +134,10 @@ void main() {
 
       expect(gateway.detailRequests, ['product-1']);
       expect(steps, ['personal:server-product']);
+      expect(
+        sessionStore.productDetailIdentityGuidance,
+        'Use the cached product copy.',
+      );
     },
   );
 
@@ -203,6 +217,58 @@ void main() {
 
     expect(gateway.admissionRequests, ['product-1']);
   });
+
+  test(
+    'refreshes product detail and cached copy after certification',
+    () async {
+      final gateway = _Gateway(
+        detail: const ProductDetailData(
+          statusCode: 200,
+          product: ProductDetailProduct(
+            productId: 'product-1',
+            orderNumber: '',
+            amount: '',
+            loanTerm: '',
+            termType: '',
+          ),
+          nextStep: ProductDetailNextStep(
+            type: 'CrampingLushing',
+            title: 'Face',
+          ),
+          certificationCopy: ProductCertificationCopy(
+            identityUploadGuidance: 'Updated product copy.',
+          ),
+        ),
+      );
+      final sessionStore = _session(authenticated: true)
+        ..cacheProductDetailIdentityGuidance('Old product copy.');
+      final flow = ProductApplicationFlow(
+        repository: gateway,
+        sessionStore: sessionStore,
+        permissions: PermissionCoordinator(
+          requestLocation: () async => PermissionStatus.granted,
+        ),
+      );
+      final steps = <String>[];
+
+      await flow.resumeAfterCertification(
+        productId: 'product-1',
+        openTarget: (_) async {},
+        openCertification: (step, productId) async =>
+            steps.add('$step:$productId'),
+        showLoading: () async {},
+        dismissLoading: () async {},
+        showMessage: (_) async {},
+      );
+
+      expect(gateway.detailRequests, ['product-1']);
+      expect(
+        sessionStore.productDetailIdentityGuidance,
+        'Updated product copy.',
+      );
+      expect(steps, ['face:product-1']);
+    },
+  );
 
   test(
     'retries admission after credit approval without location prompt',
@@ -302,6 +368,21 @@ class _Gateway implements ProductGateway {
   @override
   Future<CreditReviewData> fetchCreditReview() async =>
       const CreditReviewData(isApproved: false);
+
+  @override
+  Future<IdentityRecognitionData> uploadIdentityDocument({
+    required String filePath,
+    required String identityType,
+    required bool wasCapturedWithCamera,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> saveIdentityDocument({
+    required String fullName,
+    required String idNumber,
+    required String dateOfBirth,
+    required String identityType,
+  }) => throw UnimplementedError();
 
   @override
   Future<LoanDestinationData> fetchLoanDestination({

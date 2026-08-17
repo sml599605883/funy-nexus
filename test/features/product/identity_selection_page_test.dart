@@ -57,4 +57,19 @@ class _IdentityGateway implements ProductGateway {
     required String loanTerm,
     required String termType,
   }) => throw UnimplementedError();
+
+  @override
+  Future<IdentityRecognitionData> uploadIdentityDocument({
+    required String filePath,
+    required String identityType,
+    required bool wasCapturedWithCamera,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> saveIdentityDocument({
+    required String fullName,
+    required String idNumber,
+    required String dateOfBirth,
+    required String identityType,
+  }) => throw UnimplementedError();
 }

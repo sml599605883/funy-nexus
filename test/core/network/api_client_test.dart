@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -216,6 +217,101 @@ void main() {
       });
     },
   );
+
+  test('uses every documented Fund Nexus identity upload field', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'fund_nexus_identity_upload',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = await File(
+      '${directory.path}/identity.jpg',
+    ).writeAsBytes([1, 2, 3]);
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse({
+        'emit': 'NAVEEN TOM VARGHESE',
+        'outdueled': '623099344111',
+        'matcher': 'Male',
+        'palisades': '23/11/1993',
+        'redepositing': 'https://example.com/id.jpg',
+      });
+    });
+    addTearDown(client.close);
+
+    await ProductRepository(apiClient: client).uploadIdentityDocument(
+      filePath: file.path,
+      identityType: 'PRC',
+      wasCapturedWithCamera: false,
+    );
+
+    expect(capturedRequest.path, '/viler/argots');
+    expect(capturedRequest.method, 'POST');
+    final formData = capturedRequest.data as FormData;
+    final fields = <String, String>{
+      for (final field in formData.fields) field.key: field.value,
+    };
+    expect(fields, {
+      'etherifying': '11',
+      'tanners': '1',
+      'symptoms': 'PRC',
+      'gibbon': '',
+      'mosque': '',
+      'wealthily': '',
+      'piroplasma': '',
+    });
+    expect(formData.files.single.key, 'attach');
+  });
+
+  test('uses the documented face liveness token and upload fields', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'fund_nexus_face_upload',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = await File('${directory.path}/face.jpg').writeAsBytes([1, 2]);
+    final requests = <RequestOptions>[];
+    final client = _client(sessionStore, (request) {
+      requests.add(request);
+      return request.path == '/viler/irenically'
+          ? _successResponse({
+              'bootees': '200',
+              'reimplants': 'liveness-license',
+              'girandola': '',
+              'wealthily': 7,
+            })
+          : _successResponse({'hogtieing': 99});
+    });
+    addTearDown(client.close);
+    final repository = ProductRepository(apiClient: client);
+
+    final token = await repository.fetchFaceLivenessToken(
+      orderNumber: 'ORDER-42',
+    );
+    await repository.uploadFaceLiveness(
+      filePath: file.path,
+      token: token,
+      livenessId: 'liveness-42',
+    );
+
+    expect(requests[0].path, '/viler/irenically');
+    expect(requests[0].data, {
+      'clipsheet': 'ORDER-42',
+      'etherifying': '0',
+      'colombard': hasLength(6),
+      'libidinal': hasLength(6),
+    });
+    expect(requests[1].path, '/viler/argots');
+    final formData = requests[1].data as FormData;
+    expect(Map<String, String>.fromEntries(formData.fields), {
+      'etherifying': '10',
+      'tanners': '1',
+      'symptoms': '',
+      'gibbon': 'liveness-42',
+      'mosque': 'liveness-license',
+      'wealthily': '7',
+    });
+    expect(formData.files.single.key, 'attach');
+  });
 
   test('uses the documented Fund Nexus login request contracts', () async {
     final requests = <RequestOptions>[];

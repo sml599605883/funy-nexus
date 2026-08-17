@@ -30,6 +30,9 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
+  pod 'TrustDecisionPro', '5.2.5.1'
+  pod 'TrustDecisionLiveness', '3.1.2'
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths
@@ -46,7 +49,6 @@ post_install do |installer|
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = definitions | [
         'PERMISSION_CAMERA=1',
         'PERMISSION_LOCATION_WHENINUSE=1',
-        'PERMISSION_PHOTOS=1',
       ]
     end
   end

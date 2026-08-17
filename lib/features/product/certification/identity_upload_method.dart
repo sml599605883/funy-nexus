@@ -1,0 +1,1 @@
+enum IdentityUploadMethod { camera, album }

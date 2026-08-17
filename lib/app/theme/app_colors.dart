@@ -31,6 +31,18 @@ abstract final class AppColors {
   static const identityDivider = Color.fromRGBO(189, 189, 162, 1);
   static const identityUploadGuidance = Color.fromRGBO(38, 110, 86, 1);
   static const identityUploadButtonShadow = Color.fromRGBO(171, 235, 214, 0.63);
+  static const identityFaceButtonStart = Color.fromRGBO(39, 212, 167, 1);
+  static const identityFaceButtonEnd = Color.fromRGBO(53, 192, 145, 1);
+  static const identityConfirmationLabel = Color.fromRGBO(153, 153, 153, 1);
+  static const identityConfirmationDivider = Color.fromRGBO(238, 238, 238, 0.5);
+  static const identityDatePickerBarrier = Color.fromRGBO(0, 0, 0, 0.6);
+  static const personalProgressTrack = Color.fromRGBO(255, 221, 111, 1);
+  static const personalProgressBackgroundStart = Color.fromRGBO(
+    226,
+    255,
+    247,
+    1,
+  );
   static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
   static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);

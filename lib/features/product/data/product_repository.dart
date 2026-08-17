@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_signature.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
@@ -17,9 +20,34 @@ abstract interface class ProductGateway {
     required String loanTerm,
     required String termType,
   });
+
+  Future<IdentityRecognitionData> uploadIdentityDocument({
+    required String filePath,
+    required String identityType,
+    required bool wasCapturedWithCamera,
+  });
+
+  Future<void> saveIdentityDocument({
+    required String fullName,
+    required String idNumber,
+    required String dateOfBirth,
+    required String identityType,
+  });
 }
 
-class ProductRepository implements ProductGateway {
+abstract interface class FaceVerificationGateway {
+  Future<FaceLivenessToken> fetchFaceLivenessToken({
+    required String orderNumber,
+  });
+
+  Future<void> uploadFaceLiveness({
+    required String filePath,
+    required FaceLivenessToken token,
+    required String livenessId,
+  });
+}
+
+class ProductRepository implements ProductGateway, FaceVerificationGateway {
   ProductRepository({required this.apiClient});
 
   final ApiClient apiClient;
@@ -78,6 +106,102 @@ class ProductRepository implements ProductGateway {
       decode: CreditReviewData.fromJson,
     );
     return response.data;
+  }
+
+  @override
+  Future<IdentityRecognitionData> uploadIdentityDocument({
+    required String filePath,
+    required String identityType,
+    required bool wasCapturedWithCamera,
+  }) async {
+    final file = File(filePath);
+    if (!await file.exists()) {
+      throw ArgumentError.value(
+        filePath,
+        'filePath',
+        'Identity image is missing',
+      );
+    }
+    final formData = FormData.fromMap({
+      'etherifying': '11',
+      'tanners': wasCapturedWithCamera ? '2' : '1',
+      'symptoms': identityType,
+      'gibbon': '',
+      'mosque': '',
+      'wealthily': '',
+      'piroplasma': '',
+      'attach': await MultipartFile.fromFile(file.path),
+    });
+    final response = await apiClient.postMultipart<IdentityRecognitionData>(
+      '/viler/argots',
+      data: formData,
+      decode: IdentityRecognitionData.fromJson,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<void> saveIdentityDocument({
+    required String fullName,
+    required String idNumber,
+    required String dateOfBirth,
+    required String identityType,
+  }) async {
+    await apiClient.post<void>(
+      '/viler/knosp',
+      data: {
+        'palisades': dateOfBirth,
+        'outdueled': idNumber,
+        'emit': fullName,
+        'etherifying': '11',
+        'symptoms': identityType,
+        'choppiest': '11',
+      },
+      decode: (_) {},
+    );
+  }
+
+  @override
+  Future<FaceLivenessToken> fetchFaceLivenessToken({
+    required String orderNumber,
+  }) async {
+    final response = await apiClient.post<FaceLivenessToken>(
+      '/viler/irenically',
+      data: {
+        'clipsheet': orderNumber,
+        'etherifying': '0',
+        'colombard': ApiSignature.randomDigits(6),
+        'libidinal': ApiSignature.randomDigits(6),
+      },
+      decode: FaceLivenessToken.fromJson,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<void> uploadFaceLiveness({
+    required String filePath,
+    required FaceLivenessToken token,
+    required String livenessId,
+  }) async {
+    final file = File(filePath);
+    if (!await file.exists()) {
+      throw ArgumentError.value(filePath, 'filePath', 'Face image is missing');
+    }
+    final formData = FormData.fromMap({
+      'etherifying': '10',
+      'tanners': '1',
+      'symptoms': '',
+      'gibbon': livenessId,
+      'mosque': token.license,
+      'wealthily': '${token.livenessType}',
+      'attach': await MultipartFile.fromFile(file.path),
+    });
+    await apiClient.postMultipart<void>(
+      '/viler/argots',
+      data: formData,
+      decode: (_) {},
+    );
   }
 
   @override

@@ -118,7 +118,7 @@ class ProductApplicationFlow {
           await openCreditReview(admission.target);
           return;
         case ProductAdmissionDisposition.detail:
-          final detail = await repository.fetchProductDetail(productId);
+          final detail = await _fetchProductDetail(productId);
           await _continueFromDetail(
             requestedProductId: productId,
             detail: detail,
@@ -144,6 +144,48 @@ class ProductApplicationFlow {
     } finally {
       if (loadingVisible) await dismissLoading();
     }
+  }
+
+  Future<void> resumeAfterCertification({
+    required String productId,
+    required ProductTargetAction openTarget,
+    required ProductStepAction openCertification,
+    required ProductLoadingAction showLoading,
+    required ProductLoadingAction dismissLoading,
+    required ProductMessageAction showMessage,
+  }) async {
+    var loadingVisible = false;
+    try {
+      await showLoading();
+      loadingVisible = true;
+      final detail = await _fetchProductDetail(productId);
+      await _continueFromDetail(
+        requestedProductId: productId,
+        detail: detail,
+        openTarget: openTarget,
+        openCertification: openCertification,
+        showMessage: showMessage,
+        beforeNavigate: () async {
+          if (!loadingVisible) return;
+          await dismissLoading();
+          loadingVisible = false;
+        },
+      );
+    } catch (error) {
+      await showMessage(_messageFor(error));
+    } finally {
+      if (loadingVisible) await dismissLoading();
+    }
+  }
+
+  Future<ProductDetailData> _fetchProductDetail(String productId) async {
+    final detail = await repository.fetchProductDetail(productId);
+    sessionStore.cacheProductDetailCertification(
+      identityGuidance: detail.certificationCopy.identityUploadGuidance,
+      faceGuidance: detail.certificationCopy.faceVerificationGuidance,
+      orderNumber: detail.product.orderNumber,
+    );
+    return detail;
   }
 
   Future<void> _continueFromDetail({
