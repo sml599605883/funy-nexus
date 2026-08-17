@@ -6,30 +6,57 @@ import 'package:fund_nexus/features/mine/widgets/account_panel_action.dart';
 
 class GreenActionPanelDialog extends StatelessWidget {
   const GreenActionPanelDialog({
-    required this.firstLabel,
-    required this.secondLabel,
-    required this.onFirstPressed,
-    required this.onSecondPressed,
+    this.firstLabel,
+    this.secondLabel,
+    this.onFirstPressed,
+    this.onSecondPressed,
+    this.actions,
     required this.closeSemanticLabel,
     this.dialogKey,
     this.firstActionKey,
     this.secondActionKey,
     this.closeKey,
+    this.actionPanelHeight,
     super.key,
-  });
+  }) : assert(
+         actions != null ||
+             (firstLabel != null &&
+                 secondLabel != null &&
+                 onFirstPressed != null &&
+                 onSecondPressed != null),
+         'Provide actions or the first and second action configuration.',
+       );
 
-  final String firstLabel;
-  final String secondLabel;
-  final VoidCallback onFirstPressed;
-  final VoidCallback onSecondPressed;
+  final String? firstLabel;
+  final String? secondLabel;
+  final VoidCallback? onFirstPressed;
+  final VoidCallback? onSecondPressed;
+  final List<Widget>? actions;
   final String closeSemanticLabel;
   final Key? dialogKey;
   final Key? firstActionKey;
   final Key? secondActionKey;
   final Key? closeKey;
+  final double? actionPanelHeight;
 
   @override
   Widget build(BuildContext context) {
+    final panelActions =
+        actions ??
+        [
+          AccountPanelAction(
+            key: firstActionKey,
+            label: firstLabel!,
+            onPressed: onFirstPressed!,
+          ),
+          SizedBox(height: context.r(12)),
+          AccountPanelAction(
+            key: secondActionKey,
+            label: secondLabel!,
+            onPressed: onSecondPressed!,
+          ),
+        ];
+    final panelHeight = context.r(actionPanelHeight ?? 134);
     return Dialog(
       key: dialogKey,
       insetPadding: EdgeInsets.zero,
@@ -68,7 +95,7 @@ class GreenActionPanelDialog extends StatelessWidget {
               top: context.r(346),
               child: Container(
                 width: context.r(319),
-                height: context.r(134),
+                height: panelHeight,
                 padding: EdgeInsets.all(context.r(12)),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.vertical(
@@ -83,25 +110,11 @@ class GreenActionPanelDialog extends StatelessWidget {
                     ],
                   ),
                 ),
-                child: Column(
-                  children: [
-                    AccountPanelAction(
-                      key: firstActionKey,
-                      label: firstLabel,
-                      onPressed: onFirstPressed,
-                    ),
-                    SizedBox(height: context.r(12)),
-                    AccountPanelAction(
-                      key: secondActionKey,
-                      label: secondLabel,
-                      onPressed: onSecondPressed,
-                    ),
-                  ],
-                ),
+                child: Column(children: panelActions),
               ),
             ),
             Positioned(
-              top: context.r(496),
+              top: context.r(346) + panelHeight + context.r(16),
               child: Semantics(
                 button: true,
                 label: closeSemanticLabel,

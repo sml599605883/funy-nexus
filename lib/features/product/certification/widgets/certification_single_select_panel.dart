@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/features/mine/widgets/green_action_panel_dialog.dart';
 
 Future<T?> showCertificationSingleSelectPanel<T>(
   BuildContext context, {
@@ -34,25 +35,22 @@ class CertificationSingleSelectPanel<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleCount = options.length.clamp(1, _maxVisibleOptions);
+    final visibleCount = options.length > _maxVisibleOptions
+        ? _maxVisibleOptions
+        : options.length;
     final itemHeight = context.r(48);
     final itemSpacing = context.r(12);
     final listHeight =
         itemHeight * visibleCount + itemSpacing * (visibleCount - 1);
 
-    return Dialog(
+    return GreenActionPanelDialog(
       key: const Key('certificationSingleSelectDialog'),
-      insetPadding: EdgeInsets.zero,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: Container(
-        width: context.r(319),
-        padding: EdgeInsets.all(context.r(12)),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(context.r(8)),
-        ),
-        child: SizedBox(
+      dialogKey: const Key('certificationSingleSelectPanel'),
+      closeKey: const Key('certificationSingleSelectPanelClose'),
+      closeSemanticLabel: 'Close options',
+      actionPanelHeight: 24 + 48 * visibleCount + 12 * (visibleCount - 1),
+      actions: [
+        SizedBox(
           height: listHeight,
           child: ListView.separated(
             key: const Key('certificationSingleSelectOptions'),
@@ -87,7 +85,7 @@ class CertificationSingleSelectPanel<T> extends StatelessWidget {
             },
           ),
         ),
-      ),
+      ],
     );
   }
 }

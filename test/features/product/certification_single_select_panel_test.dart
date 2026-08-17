@@ -27,6 +27,10 @@ void main() {
       find.byKey(const Key('certificationSingleSelectDialog')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('certificationSingleSelectPanelClose')),
+      findsOneWidget,
+    );
     expect(find.byIcon(Icons.check), findsNothing);
 
     await tester.tap(find.text('Male'));
