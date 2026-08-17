@@ -103,6 +103,10 @@ class PersonalInformationInputField extends StatelessWidget {
                 : TextInputType.text,
             decoration: InputDecoration(
               hintText: field.data.placeholder,
+              hintStyle: TextStyle(
+                color: AppColors.personalInformationPlaceholder,
+                fontSize: context.r(14),
+              ),
               border: InputBorder.none,
               isDense: true,
             ),
