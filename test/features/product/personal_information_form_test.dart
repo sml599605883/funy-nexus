@@ -81,4 +81,31 @@ void main() {
       AppColors.personalInformationPlaceholder,
     );
   });
+
+  testWidgets('ellipsizes a long field value without flex overflow', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ResponsiveScope(
+          child: Scaffold(
+            body: PersonalInformationFieldValue(
+              value:
+                  'A very long address value that must stay inside the field width',
+              isPlaceholder: false,
+              showChevron: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(Text), findsOneWidget);
+    expect(tester.widget<Text>(find.byType(Text)).maxLines, 1);
+    expect(
+      tester.widget<Text>(find.byType(Text)).overflow,
+      TextOverflow.ellipsis,
+    );
+  });
 }

@@ -178,6 +178,8 @@ class PersonalInformationFieldShell extends StatelessWidget {
       children: [
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: context.r(16),
@@ -217,13 +219,17 @@ class PersonalInformationFieldValue extends StatelessWidget {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: isPlaceholder
-                ? AppColors.personalInformationPlaceholder
-                : AppColors.textPrimary,
-            fontSize: context.r(14),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isPlaceholder
+                  ? AppColors.personalInformationPlaceholder
+                  : AppColors.textPrimary,
+              fontSize: context.r(14),
+            ),
           ),
         ),
         if (trailing != null)
