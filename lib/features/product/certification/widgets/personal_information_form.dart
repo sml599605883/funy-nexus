@@ -130,26 +130,28 @@ class PersonalInformationSelectField extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    key: Key('personalInformation-${field.data.saveKey}'),
-    onTap: field.data.control == PersonalInformationControl.unsupported
-        ? null
-        : onTap,
-    borderRadius: BorderRadius.circular(context.r(4)),
-    child: PersonalInformationFieldValue(
-      value: field.controller.text.isEmpty
-          ? field.data.placeholder
-          : field.controller.text,
-      showChevron: !isAddressLoading,
-      trailing: isAddressLoading
-          ? SizedBox(
-              width: context.r(18),
-              height: context.r(18),
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            )
-          : null,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final isPlaceholder = field.controller.text.isEmpty;
+    return InkWell(
+      key: Key('personalInformation-${field.data.saveKey}'),
+      onTap: field.data.control == PersonalInformationControl.unsupported
+          ? null
+          : onTap,
+      borderRadius: BorderRadius.circular(context.r(4)),
+      child: PersonalInformationFieldValue(
+        value: isPlaceholder ? field.data.placeholder : field.controller.text,
+        isPlaceholder: isPlaceholder,
+        showChevron: !isAddressLoading,
+        trailing: isAddressLoading
+            ? SizedBox(
+                width: context.r(18),
+                height: context.r(18),
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            : null,
+      ),
+    );
+  }
 }
 
 class PersonalInformationFieldShell extends StatelessWidget {
@@ -189,12 +191,14 @@ class PersonalInformationFieldShell extends StatelessWidget {
 class PersonalInformationFieldValue extends StatelessWidget {
   const PersonalInformationFieldValue({
     required this.value,
+    required this.isPlaceholder,
     required this.showChevron,
     this.trailing,
     super.key,
   });
 
   final String value;
+  final bool isPlaceholder;
   final bool showChevron;
   final Widget? trailing;
 
@@ -212,7 +216,9 @@ class PersonalInformationFieldValue extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: isPlaceholder
+                ? AppColors.personalInformationPlaceholder
+                : AppColors.textPrimary,
             fontSize: context.r(14),
           ),
         ),

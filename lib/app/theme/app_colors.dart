@@ -50,6 +50,12 @@ abstract final class AppColors {
     247,
     1,
   );
+  static const personalInformationPlaceholder = Color.fromRGBO(
+    183,
+    183,
+    183,
+    1,
+  );
   static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
   static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);
