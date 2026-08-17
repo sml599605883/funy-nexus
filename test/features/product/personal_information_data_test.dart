@@ -73,4 +73,31 @@ void main() {
 
     expect(nodes.single.children.single.children.single.label, 'City');
   });
+
+  test('parses the current address initialization response hierarchy', () {
+    final nodes = PersonalAddressNode.parseList({
+      'foresight': {
+        'semihobos': [
+          {
+            'ecclesia': 1,
+            'emit': 'NCR',
+            'semihobos': [
+              {
+                'ecclesia': 1,
+                'emit': 'Metro Manila',
+                'semihobos': [
+                  {'ecclesia': 1350, 'emit': 'Manila'},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(nodes.single.id, '1');
+    expect(nodes.single.children.single.label, 'Metro Manila');
+    expect(nodes.single.children.single.children.single.id, '1350');
+    expect(nodes.single.children.single.children.single.label, 'Manila');
+  });
 }

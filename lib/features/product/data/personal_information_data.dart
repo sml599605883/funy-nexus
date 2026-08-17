@@ -109,9 +109,13 @@ class PersonalAddressNode {
   });
 
   factory PersonalAddressNode.fromJson(Json json) {
-    final children = json['bedtimes'].listOrNull ?? json['children'].listValue;
+    final children =
+        json['semihobos'].listOrNull ??
+        json['bedtimes'].listOrNull ??
+        json['children'].listValue;
     return PersonalAddressNode(
-      id: json['fasciitis'].stringValue.trim(),
+      id: (json['ecclesia'].stringOrNull ?? json['fasciitis'].stringValue)
+          .trim(),
       label: json['emit'].stringValue.trim(),
       children: children
           .map(PersonalAddressNode.fromJson)
