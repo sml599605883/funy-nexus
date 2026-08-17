@@ -62,76 +62,97 @@ class GreenActionPanelDialog extends StatelessWidget {
       insetPadding: EdgeInsets.zero,
       backgroundColor: Colors.transparent,
       elevation: 0,
-      child: SizedBox(
-        width: context.r(375),
-        height: context.r(812),
-        child: Stack(
-          alignment: Alignment.topCenter,
-          children: [
-            Positioned(
-              top: context.r(332),
-              child: Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final mediaSize = MediaQuery.sizeOf(context);
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : mediaSize.width;
+          final height = constraints.hasBoundedHeight
+              ? constraints.maxHeight
+              : mediaSize.height;
+          final groupHeight = panelHeight + context.r(62);
+
+          return SizedBox(
+            width: width,
+            height: height,
+            child: Center(
+              child: SizedBox(
                 width: context.r(343),
-                height: context.r(28),
-                padding: EdgeInsets.fromLTRB(
-                  context.r(12),
-                  context.r(8),
-                  context.r(12),
-                  context.r(8),
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.mineAccountPanelAccent,
-                  borderRadius: BorderRadius.circular(context.r(28)),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.mineAccountPanelTop,
-                    borderRadius: BorderRadius.circular(context.r(28)),
-                  ),
+                height: groupHeight,
+                child: Stack(
+                  alignment: Alignment.topCenter,
+                  children: [
+                    Positioned(
+                      top: 0,
+                      child: Container(
+                        width: context.r(343),
+                        height: context.r(28),
+                        padding: EdgeInsets.fromLTRB(
+                          context.r(12),
+                          context.r(8),
+                          context.r(12),
+                          context.r(8),
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.mineAccountPanelAccent,
+                          borderRadius: BorderRadius.circular(context.r(28)),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.mineAccountPanelTop,
+                            borderRadius: BorderRadius.circular(
+                              context.r(28),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: context.r(14),
+                      child: Container(
+                        width: context.r(319),
+                        height: panelHeight,
+                        padding: EdgeInsets.all(context.r(12)),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(context.r(12)),
+                          ),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.mineAccountPanelStart,
+                              AppColors.mineAccountPanelEnd,
+                            ],
+                          ),
+                        ),
+                        child: Column(children: panelActions),
+                      ),
+                    ),
+                    Positioned(
+                      top: context.r(14) + panelHeight + context.r(16),
+                      child: Semantics(
+                        button: true,
+                        label: closeSemanticLabel,
+                        child: InkWell(
+                          key: closeKey,
+                          onTap: () => Navigator.of(context).pop(),
+                          borderRadius: BorderRadius.circular(context.r(16)),
+                          child: Image.asset(
+                            AppAssets.mineAccountPanelClose,
+                            width: context.r(32),
+                            height: context.r(32),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            Positioned(
-              top: context.r(346),
-              child: Container(
-                width: context.r(319),
-                height: panelHeight,
-                padding: EdgeInsets.all(context.r(12)),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(context.r(12)),
-                  ),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.mineAccountPanelStart,
-                      AppColors.mineAccountPanelEnd,
-                    ],
-                  ),
-                ),
-                child: Column(children: panelActions),
-              ),
-            ),
-            Positioned(
-              top: context.r(346) + panelHeight + context.r(16),
-              child: Semantics(
-                button: true,
-                label: closeSemanticLabel,
-                child: InkWell(
-                  key: closeKey,
-                  onTap: () => Navigator.of(context).pop(),
-                  borderRadius: BorderRadius.circular(context.r(16)),
-                  child: Image.asset(
-                    AppAssets.mineAccountPanelClose,
-                    width: context.r(32),
-                    height: context.r(32),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

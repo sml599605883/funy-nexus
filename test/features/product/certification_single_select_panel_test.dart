@@ -4,6 +4,33 @@ import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_single_select_panel.dart';
 
 void main() {
+  testWidgets('fills the screen and centers the panel group', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(375, 812));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _app(
+        onPressed: (context) => showCertificationSingleSelectPanel<String>(
+          context,
+          options: const ['Female', 'Male'],
+          labelBuilder: (option) => option,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('openSingleSelect')));
+    await tester.pumpAndSettle();
+
+    final dialog = tester.getRect(
+      find.byKey(const Key('certificationSingleSelectPanel')),
+    );
+    final options = tester.getRect(
+      find.byKey(const Key('certificationSingleSelectOptions')),
+    );
+    expect(dialog, const Rect.fromLTWH(0, 0, 375, 812));
+    expect(options.left, closeTo(40, 0.01));
+    expect(options.top, closeTo(335, 0.01));
+  });
+
   testWidgets('selecting an option closes the panel without a check icon', (
     tester,
   ) async {
