@@ -71,6 +71,9 @@ class GreenActionPanelDialog extends StatelessWidget {
           final height = constraints.hasBoundedHeight
               ? constraints.maxHeight
               : mediaSize.height;
+          const horizontalInset = 16.0;
+          final groupWidth = width - horizontalInset * 2;
+          final panelWidth = groupWidth - context.r(24);
           final groupHeight = panelHeight + context.r(62);
 
           return SizedBox(
@@ -78,7 +81,8 @@ class GreenActionPanelDialog extends StatelessWidget {
             height: height,
             child: Center(
               child: SizedBox(
-                width: context.r(343),
+                key: const Key('greenActionPanelGroup'),
+                width: groupWidth,
                 height: groupHeight,
                 child: Stack(
                   alignment: Alignment.topCenter,
@@ -86,7 +90,7 @@ class GreenActionPanelDialog extends StatelessWidget {
                     Positioned(
                       top: 0,
                       child: Container(
-                        width: context.r(343),
+                        width: groupWidth,
                         height: context.r(28),
                         padding: EdgeInsets.fromLTRB(
                           context.r(12),
@@ -101,9 +105,7 @@ class GreenActionPanelDialog extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             color: AppColors.mineAccountPanelTop,
-                            borderRadius: BorderRadius.circular(
-                              context.r(28),
-                            ),
+                            borderRadius: BorderRadius.circular(context.r(28)),
                           ),
                         ),
                       ),
@@ -111,7 +113,7 @@ class GreenActionPanelDialog extends StatelessWidget {
                     Positioned(
                       top: context.r(14),
                       child: Container(
-                        width: context.r(319),
+                        width: panelWidth,
                         height: panelHeight,
                         padding: EdgeInsets.all(context.r(12)),
                         decoration: BoxDecoration(
