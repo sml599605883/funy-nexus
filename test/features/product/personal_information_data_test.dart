@@ -1,0 +1,76 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fund_nexus/features/product/data/personal_information_data.dart';
+
+void main() {
+  test('parses server controls, labels, and submit values', () {
+    final data = PersonalInformationData.fromJson({
+      'cornbraids': 'Complete your personal information.',
+      'orographical': [
+        {
+          'culinarians': 'Education',
+          'must': 'Please select education',
+          'fasciitis': 'education',
+          'presentableness': 'enum',
+          'bobberies': 0,
+          'rubicund': [
+            {'emit': 'College', 'etherifying': 2},
+            {'emit': 'Postgraduate', 'etherifying': 3},
+          ],
+          'lambadas': 0,
+          'steeplechases': 'College',
+        },
+        {
+          'culinarians': 'Email',
+          'must': 'Please input email',
+          'fasciitis': 'offer',
+          'presentableness': 'txt',
+          'bobberies': 0,
+          'rubicund': const [],
+          'lambadas': 1,
+          'steeplechases': 'user@example.com',
+        },
+        {
+          'culinarians': 'Residential Address',
+          'must': 'Please select address',
+          'fasciitis': 'residential_address',
+          'presentableness': 'stage',
+          'bobberies': 0,
+          'rubicund': const [],
+          'lambadas': 0,
+          'steeplechases': '',
+        },
+      ],
+    });
+
+    expect(data.prompt, 'Complete your personal information.');
+    expect(data.fields, hasLength(3));
+    expect(data.fields[0].control, PersonalInformationControl.selection);
+    expect(data.fields[0].initialDisplayValue, 'College');
+    expect(data.fields[0].initialSubmitValue, '2');
+    expect(data.fields[1].control, PersonalInformationControl.text);
+    expect(data.fields[1].isRequired, isFalse);
+    expect(data.fields[2].control, PersonalInformationControl.address);
+  });
+
+  test('parses the documented address hierarchy', () {
+    final nodes = PersonalAddressNode.parseList({
+      'semihobos': [
+        {
+          'fasciitis': '1',
+          'emit': 'Region',
+          'bedtimes': [
+            {
+              'fasciitis': '1-1',
+              'emit': 'Province',
+              'bedtimes': [
+                {'fasciitis': '1-1-1', 'emit': 'City', 'bedtimes': const []},
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(nodes.single.children.single.children.single.label, 'City');
+  });
+}

@@ -4,6 +4,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 
@@ -80,27 +81,16 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
               onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
               child: Column(
                 children: [
-                  const _ConfirmationHeader(),
+                  const CertificationPageHeader(title: 'ID Verification'),
                   Padding(
                     padding: EdgeInsets.only(
                       left: context.r(16),
                       top: context.r(32),
                       right: context.r(172),
                     ),
-                    child: SizedBox(
+                    child: CertificationGuidance(
                       key: const Key('identityConfirmationPrompt'),
-                      height: context.r(57),
-                      width: double.infinity,
-                      child: Text(
-                        prompt == null || prompt.isEmpty ? _prompt : prompt,
-                        maxLines: 3,
-                        style: TextStyle(
-                          color: AppColors.identityUploadGuidance,
-                          fontSize: context.r(16),
-                          fontWeight: FontWeight.w700,
-                          height: 19 / 16,
-                        ),
-                      ),
+                      text: prompt == null || prompt.isEmpty ? _prompt : prompt,
                     ),
                   ),
                   SizedBox(height: context.r(32)),
@@ -199,28 +189,6 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
     final parts = value.split('-');
     if (parts.length != 3) return null;
     return DateTime.tryParse('${parts[2]}-${parts[1]}-${parts[0]}');
-  }
-}
-
-class _ConfirmationHeader extends StatelessWidget {
-  const _ConfirmationHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.r(60),
-      child: Center(
-        child: Text(
-          'ID Verification',
-          style: TextStyle(
-            color: AppColors.identityTitle,
-            fontSize: context.r(17),
-            fontWeight: FontWeight.w600,
-            height: 24 / 17,
-          ),
-        ),
-      ),
-    );
   }
 }
 

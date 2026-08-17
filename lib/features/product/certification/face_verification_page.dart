@@ -11,6 +11,7 @@ import 'package:fund_nexus/core/face/face_liveness_bridge.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -64,7 +65,10 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
           SafeArea(
             child: Column(
               children: [
-                _FaceHeader(onBack: () => Navigator.of(context).maybePop()),
+                CertificationPageHeader(
+                  title: 'Face verification',
+                  onBack: () => Navigator.of(context).maybePop(),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.only(bottom: context.r(16)),
@@ -76,11 +80,10 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
                             left: context.r(16),
                             top: context.r(32),
                           ),
-                          child: SizedBox(
+                          child: CertificationGuidance(
                             key: const Key('faceVerificationGuidance'),
-                            width: context.r(187),
-                            height: context.r(57),
-                            child: _FaceGuidance(text: guidance),
+                            width: 187,
+                            text: guidance,
                           ),
                         ),
                         SizedBox(height: context.r(34)),
@@ -244,69 +247,6 @@ class _FaceVerificationFailure implements Exception {
   const _FaceVerificationFailure(this.message);
 
   final String message;
-}
-
-class _FaceHeader extends StatelessWidget {
-  const _FaceHeader({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.r(60),
-      child: Row(
-        children: [
-          SizedBox(width: context.r(24)),
-          SizedBox(
-            width: context.r(24),
-            height: context.r(24),
-            child: IconButton(
-              onPressed: onBack,
-              icon: Image.asset(AppAssets.identityBackButton),
-              padding: EdgeInsets.zero,
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Face verification',
-                style: TextStyle(
-                  color: AppColors.identityTitle,
-                  fontSize: context.r(17),
-                  fontWeight: FontWeight.w600,
-                  height: 24 / 17,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: context.r(48)),
-        ],
-      ),
-    );
-  }
-}
-
-class _FaceGuidance extends StatelessWidget {
-  const _FaceGuidance({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        color: AppColors.identityUploadGuidance,
-        fontSize: context.r(16),
-        fontWeight: FontWeight.w700,
-        height: 19 / 16,
-      ),
-    );
-  }
 }
 
 class _FaceSubmitButton extends StatelessWidget {

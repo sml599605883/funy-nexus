@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_signature.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
+import 'package:fund_nexus/features/product/data/personal_information_data.dart';
 
 abstract interface class ProductGateway {
   Future<ProductAdmissionData> requestAdmission(String productId);
@@ -47,7 +48,22 @@ abstract interface class FaceVerificationGateway {
   });
 }
 
-class ProductRepository implements ProductGateway, FaceVerificationGateway {
+abstract interface class PersonalInformationGateway {
+  Future<PersonalInformationData> fetchPersonalInformation(String productId);
+
+  Future<List<PersonalAddressNode>> fetchPersonalInformationAddresses();
+
+  Future<void> savePersonalInformation({
+    required String productId,
+    required Map<String, String> fields,
+  });
+}
+
+class ProductRepository
+    implements
+        ProductGateway,
+        FaceVerificationGateway,
+        PersonalInformationGateway {
   ProductRepository({required this.apiClient});
 
   final ApiClient apiClient;
@@ -156,6 +172,44 @@ class ProductRepository implements ProductGateway, FaceVerificationGateway {
         'etherifying': '11',
         'symptoms': identityType,
         'choppiest': '11',
+      },
+      decode: (_) {},
+    );
+  }
+
+  @override
+  Future<PersonalInformationData> fetchPersonalInformation(
+    String productId,
+  ) async {
+    final response = await apiClient.post<PersonalInformationData>(
+      '/viler/chippered',
+      data: {'modernised': productId, 'movieola': ApiSignature.randomDigits(6)},
+      decode: PersonalInformationData.fromJson,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<List<PersonalAddressNode>> fetchPersonalInformationAddresses() async {
+    final response = await apiClient.get<List<PersonalAddressNode>>(
+      '/viler/closets',
+      decode: PersonalAddressNode.parseList,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<void> savePersonalInformation({
+    required String productId,
+    required Map<String, String> fields,
+  }) async {
+    await apiClient.post<void>(
+      '/viler/requiems',
+      data: {
+        ...fields,
+        'modernised': productId,
+        'chapels': ApiSignature.randomDigits(6),
+        'massiness': ApiSignature.randomDigits(6),
       },
       decode: (_) {},
     );

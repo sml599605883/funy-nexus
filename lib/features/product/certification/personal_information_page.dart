@@ -1,18 +1,30 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/network/api_exception.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_single_select_panel.dart';
+import 'package:fund_nexus/features/product/data/personal_information_data.dart';
+import 'package:fund_nexus/features/product/data/product_repository.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
 class PersonalInformationPage extends StatefulWidget {
-  const PersonalInformationPage({required this.productId, super.key});
+  const PersonalInformationPage({
+    required this.productId,
+    this.gateway,
+    super.key,
+  });
 
   final String productId;
+  final PersonalInformationGateway? gateway;
 
   @override
   State<PersonalInformationPage> createState() =>
@@ -20,33 +32,44 @@ class PersonalInformationPage extends StatefulWidget {
 }
 
 class _PersonalInformationPageState extends State<PersonalInformationPage> {
-  final _homePhoneController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _values = <String, String>{
-    'Gender': 'Female',
-    'Type of Residence': 'Female',
-  };
+  _PersonalInformationLoadState _loadState =
+      _PersonalInformationLoadState.loading;
+  List<_PersonalInformationFieldState> _fields = const [];
+  List<PersonalAddressNode>? _addressNodes;
+  String _prompt = '';
+  String _loadError = '';
+  String? _addressLoadingKey;
   bool _submitting = false;
 
-  static const _options = <String, List<String>>{
-    'Gender': ['Female', 'Male'],
-    'Education': ['High school', 'College', 'Postgraduate'],
-    'Marriage Status': ['Single', 'Married'],
-    'Type of Residence': ['Owned', 'Rented', 'Family home'],
-    'Address Input': ['Metro Manila', 'Luzon', 'Visayas', 'Mindanao'],
-    'Reason for Loan': ['Medical', 'Education', 'Home improvement', 'Business'],
-  };
+  PersonalInformationGateway get _gateway =>
+      widget.gateway ?? context.read<PersonalInformationGateway>();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
 
   @override
   void dispose() {
-    _homePhoneController.dispose();
-    _addressController.dispose();
+    _disposeFields(_fields);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final guidance = context.read<SessionStore>().productDetailIdentityGuidance;
+    final cachedGuidance = context
+        .read<SessionStore>()
+        .productDetailIdentityGuidance;
+    final guidance = cachedGuidance.isEmpty && _prompt.isEmpty
+        ? 'Add your work details to\nhelp us assess your\navailable credit limit.'
+        : cachedGuidance.isNotEmpty
+        ? cachedGuidance
+        : _prompt;
+    final busy =
+        _loadState == _PersonalInformationLoadState.loading ||
+        _submitting ||
+        _addressLoadingKey != null;
     return Scaffold(
       backgroundColor: AppColors.homeBackground,
       body: Stack(
@@ -60,49 +83,42 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
           ),
           SafeArea(
             bottom: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: context.r(92)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Header(onBack: () => Navigator.of(context).maybePop()),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      context.r(16),
-                      context.r(24),
-                      context.r(172),
-                      0,
+            child: GestureDetector(
+              key: const Key('personalInformationDismissKeyboard'),
+              behavior: HitTestBehavior.translucent,
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: context.r(92)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CertificationPageHeader(
+                      title: 'Basic identity information',
+                      onBack: () => Navigator.of(context).maybePop(),
+                      backButtonKey: const Key('personalInformationBack'),
                     ),
-                    child: SizedBox(
-                      key: const Key('personalInformationGuidance'),
-                      height: context.r(57),
-                      child: Text(
-                        guidance.isEmpty
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        context.r(16),
+                        context.r(24),
+                        context.r(172),
+                        0,
+                      ),
+                      child: CertificationGuidance(
+                        key: const Key('personalInformationGuidance'),
+                        text: guidance.isEmpty
                             ? 'Add your work details to\nhelp us assess your\navailable credit limit.'
                             : guidance,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.identityUploadGuidance,
-                          fontSize: context.r(16),
-                          fontWeight: FontWeight.w700,
-                          height: 19 / 16,
-                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: context.r(41)),
-                  const Center(child: _Progress()),
-                  Transform.translate(
-                    offset: Offset(0, -context.r(27)),
-                    child: _FormCard(
-                      values: _values,
-                      homePhoneController: _homePhoneController,
-                      addressController: _addressController,
-                      onSelect: _select,
+                    SizedBox(height: context.r(41)),
+                    const Center(child: _Progress()),
+                    Transform.translate(
+                      offset: Offset(0, -context.r(27)),
+                      child: _buildForm(context),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -116,69 +132,175 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
             context.r(16),
             context.r(14),
           ),
-          child: _UploadButton(enabled: !_submitting, onPressed: _submit),
+          child: _UploadButton(
+            enabled:
+                _loadState == _PersonalInformationLoadState.content && !busy,
+            onPressed: _submit,
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _select(String label) async {
-    final choices = _options[label];
-    if (choices == null) return;
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            ...choices.map(
-              (choice) => ListTile(
-                title: Text(choice),
-                trailing: _values[label] == choice
-                    ? const Icon(
-                        Icons.check,
-                        color: AppColors.homeApplyButtonEnd,
-                      )
-                    : null,
-                onTap: () => Navigator.of(sheetContext).pop(choice),
-              ),
-            ),
-          ],
-        ),
+  Widget _buildForm(BuildContext context) {
+    return switch (_loadState) {
+      _PersonalInformationLoadState.loading => _FormStatus(
+        message: 'Loading...',
+        showProgress: true,
       ),
-    );
-    if (selected != null && mounted) setState(() => _values[label] = selected);
+      _PersonalInformationLoadState.empty => _FormStatus(
+        message: 'No personal information available',
+        onRetry: _load,
+      ),
+      _PersonalInformationLoadState.error => _FormStatus(
+        message: _loadError,
+        onRetry: _load,
+      ),
+      _PersonalInformationLoadState.content => _FormCard(
+        fields: _fields,
+        addressLoadingKey: _addressLoadingKey,
+        onSelect: _selectField,
+      ),
+    };
+  }
+
+  Future<void> _load() async {
+    if (mounted) {
+      setState(() {
+        _loadState = _PersonalInformationLoadState.loading;
+        _loadError = '';
+      });
+    }
+    try {
+      final data = await _gateway.fetchPersonalInformation(widget.productId);
+      final fields = data.fields
+          .map(_PersonalInformationFieldState.new)
+          .toList(growable: false);
+      if (!mounted) {
+        _disposeFields(fields);
+        return;
+      }
+      setState(() {
+        _disposeFields(_fields);
+        _fields = fields;
+        _prompt = data.prompt;
+        _loadState = fields.isEmpty
+            ? _PersonalInformationLoadState.empty
+            : _PersonalInformationLoadState.content;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _disposeFields(_fields);
+        _fields = const [];
+        _loadError = _messageFor(error);
+        _loadState = _PersonalInformationLoadState.error;
+      });
+    }
+  }
+
+  Future<void> _selectField(_PersonalInformationFieldState field) async {
+    switch (field.data.control) {
+      case PersonalInformationControl.selection:
+        await _selectOption(field);
+      case PersonalInformationControl.address:
+        await _selectAddress(field);
+      case PersonalInformationControl.text:
+      case PersonalInformationControl.unsupported:
+        return;
+    }
+  }
+
+  Future<void> _selectOption(_PersonalInformationFieldState field) async {
+    final selected =
+        await showCertificationSingleSelectPanel<PersonalInformationOption>(
+          context,
+          options: field.data.options,
+          labelBuilder: (choice) => choice.label,
+        );
+    if (selected != null && mounted) {
+      setState(() {
+        field.submitValue = selected.value;
+        field.controller.text = selected.label;
+      });
+    }
+  }
+
+  Future<void> _selectAddress(_PersonalInformationFieldState field) async {
+    if (_addressLoadingKey != null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _addressLoadingKey = field.data.saveKey);
+    try {
+      _addressNodes ??= await _gateway.fetchPersonalInformationAddresses();
+      if (!mounted) return;
+      final nodes = _addressNodes!;
+      if (nodes.isEmpty) {
+        throw const ApiException(
+          type: ApiFailureType.invalidResponse,
+          message: 'No address options available.',
+        );
+      }
+      final selected = await showModalBottomSheet<String>(
+        context: context,
+        backgroundColor: AppColors.surface,
+        builder: (sheetContext) => _AddressOptionsSheet(
+          nodes: nodes,
+          initialValue: field.submitValue,
+          onSelected: (value) => Navigator.of(sheetContext).pop(value),
+        ),
+      );
+      if (selected != null && mounted) {
+        setState(() {
+          field.submitValue = selected;
+          field.controller.text = selected;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        await EasyLoading.showError(
+          _messageFor(error, fallback: 'Unable to load address options.'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _addressLoadingKey = null);
+    }
   }
 
   Future<void> _submit() async {
     if (_submitting) return;
-    final missing = _options.keys.any((key) => !_values.containsKey(key));
-    if (missing ||
-        _homePhoneController.text.trim().isEmpty ||
-        _addressController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Please complete your information.')),
-        );
-      return;
-    }
+    final fields = <String, String>{
+      for (final field in _fields) field.data.saveKey: field.currentSubmitValue,
+    };
     setState(() => _submitting = true);
-    await EasyLoading.show(status: 'Loading...');
-    // The personal-information API contract is server-driven and will be wired
-    // here once its documented endpoint is available.
-    await EasyLoading.dismiss();
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    await _continue();
+    try {
+      await EasyLoading.show(status: 'Loading...');
+      await _gateway.savePersonalInformation(
+        productId: widget.productId,
+        fields: fields,
+      );
+      await EasyLoading.dismiss();
+      if (mounted) await _continue();
+    } catch (error) {
+      await EasyLoading.dismiss();
+      if (mounted) {
+        await EasyLoading.showError(
+          _messageFor(error, fallback: 'Unable to save personal information.'),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  String _messageFor(
+    Object error, {
+    String fallback = 'Unable to load personal information.',
+  }) => error is ApiException ? error.message : fallback;
+
+  void _disposeFields(Iterable<_PersonalInformationFieldState> fields) {
+    for (final field in fields) {
+      field.controller.dispose();
+    }
   }
 
   Future<void> _continue() async {
@@ -195,46 +317,22 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.onBack});
-  final VoidCallback onBack;
+enum _PersonalInformationLoadState { loading, content, empty, error }
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.r(60),
-      child: Row(
-        children: [
-          SizedBox(width: context.r(24)),
-          SizedBox(
-            width: context.r(24),
-            height: context.r(24),
-            child: IconButton(
-              key: const Key('personalInformationBack'),
-              onPressed: onBack,
-              icon: Image.asset(AppAssets.identityBackButton),
-              padding: EdgeInsets.zero,
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Basic identity information',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: context.r(17),
-                  fontWeight: FontWeight.w600,
-                  height: 24 / 17,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: context.r(48)),
-        ],
-      ),
-    );
-  }
+class _PersonalInformationFieldState {
+  _PersonalInformationFieldState(this.data)
+    : controller = TextEditingController(text: data.initialDisplayValue),
+      submitValue = data.initialSubmitValue;
+
+  final PersonalInformationField data;
+  final TextEditingController controller;
+  String submitValue;
+
+  String get currentSubmitValue =>
+      (data.control == PersonalInformationControl.text
+              ? controller.text
+              : submitValue)
+          .trim();
 }
 
 class _Progress extends StatelessWidget {
@@ -314,57 +412,16 @@ class _Progress extends StatelessWidget {
 
 class _FormCard extends StatelessWidget {
   const _FormCard({
-    required this.values,
-    required this.homePhoneController,
-    required this.addressController,
+    required this.fields,
+    required this.addressLoadingKey,
     required this.onSelect,
   });
-  final Map<String, String> values;
-  final TextEditingController homePhoneController;
-  final TextEditingController addressController;
-  final ValueChanged<String> onSelect;
+  final List<_PersonalInformationFieldState> fields;
+  final String? addressLoadingKey;
+  final ValueChanged<_PersonalInformationFieldState> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final fields = <Widget>[
-      _SelectField(
-        label: 'Gender',
-        value: values['Gender'],
-        onTap: () => onSelect('Gender'),
-      ),
-      _SelectField(
-        label: 'Education',
-        value: values['Education'],
-        onTap: () => onSelect('Education'),
-      ),
-      _SelectField(
-        label: 'Marriage Status',
-        value: values['Marriage Status'],
-        onTap: () => onSelect('Marriage Status'),
-      ),
-      _SelectField(
-        label: 'Type of Residence',
-        value: values['Type of Residence'],
-        onTap: () => onSelect('Type of Residence'),
-      ),
-      _InputField(
-        label: 'Home Phone Number',
-        controller: homePhoneController,
-        prefix: '0321',
-      ),
-      _SelectField(
-        label: 'Address Input',
-        value: values['Address Input'],
-        onTap: () => onSelect('Address Input'),
-      ),
-      _InputField(label: 'Complete Address', controller: addressController),
-      _SelectField(
-        label: 'Reason for Loan',
-        value: values['Reason for Loan'],
-        onTap: () => onSelect('Reason for Loan'),
-        isLast: true,
-      ),
-    ];
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: context.r(16)),
       child: Container(
@@ -377,87 +434,118 @@ class _FormCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: fields,
+          children: [
+            for (var index = 0; index < fields.length; index++)
+              _PersonalInformationFieldView(
+                field: fields[index],
+                isLast: index == fields.length - 1,
+                isAddressLoading:
+                    fields[index].data.saveKey == addressLoadingKey,
+                onTap: () => onSelect(fields[index]),
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _SelectField extends StatelessWidget {
-  const _SelectField({
-    required this.label,
-    required this.value,
+class _PersonalInformationFieldView extends StatelessWidget {
+  const _PersonalInformationFieldView({
+    required this.field,
+    required this.isLast,
+    required this.isAddressLoading,
     required this.onTap,
-    this.isLast = false,
   });
-  final String label;
-  final String? value;
-  final VoidCallback onTap;
+  final _PersonalInformationFieldState field;
   final bool isLast;
+  final bool isAddressLoading;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => _FieldShell(
-    label: label,
-    bottomPadding: isLast ? 0 : null,
-    child: InkWell(
-      key: Key('personalInformation-$label'),
-      onTap: onTap,
+  Widget build(BuildContext context) {
+    final data = field.data;
+    final isText = data.control == PersonalInformationControl.text;
+    return _FieldShell(
+      label: data.title,
+      bottomPadding: isLast ? 0 : null,
+      child: isText
+          ? _InputField(field: field)
+          : _SelectField(
+              field: field,
+              isAddressLoading: isAddressLoading,
+              onTap: onTap,
+            ),
+    );
+  }
+}
+
+class _InputField extends StatelessWidget {
+  const _InputField({required this.field});
+  final _PersonalInformationFieldState field;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: context.r(48),
+    padding: EdgeInsets.symmetric(horizontal: context.r(12)),
+    decoration: BoxDecoration(
+      color: AppColors.mineItemBackground,
       borderRadius: BorderRadius.circular(context.r(4)),
-      child: _FieldValue(value: value ?? 'Please select', showChevron: true),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: TextField(
+            key: Key('personalInformationInput-${field.data.saveKey}'),
+            controller: field.controller,
+            keyboardType: field.data.numericKeyboard
+                ? TextInputType.number
+                : TextInputType.text,
+            decoration: InputDecoration(
+              hintText: field.data.placeholder,
+              border: InputBorder.none,
+              isDense: true,
+            ),
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: context.r(14),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 }
 
-class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.label,
-    required this.controller,
-    this.prefix,
+class _SelectField extends StatelessWidget {
+  const _SelectField({
+    required this.field,
+    required this.isAddressLoading,
+    required this.onTap,
   });
-  final String label;
-  final TextEditingController controller;
-  final String? prefix;
+  final _PersonalInformationFieldState field;
+  final bool isAddressLoading;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => _FieldShell(
-    label: label,
-    child: Container(
-      height: context.r(48),
-      padding: EdgeInsets.symmetric(horizontal: context.r(12)),
-      decoration: BoxDecoration(
-        color: AppColors.mineItemBackground,
-        borderRadius: BorderRadius.circular(context.r(4)),
-      ),
-      child: Row(
-        children: [
-          if (prefix != null) ...[
-            Text(
-              prefix!,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: context.r(14),
-              ),
-            ),
-            SizedBox(width: context.r(8)),
-          ],
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(
-                hintText: 'Please enter',
-                border: InputBorder.none,
-                isDense: true,
-              ),
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: context.r(14),
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => InkWell(
+    key: Key('personalInformation-${field.data.saveKey}'),
+    onTap: field.data.control == PersonalInformationControl.unsupported
+        ? null
+        : onTap,
+    borderRadius: BorderRadius.circular(context.r(4)),
+    child: _FieldValue(
+      value: field.controller.text.isEmpty
+          ? field.data.placeholder
+          : field.controller.text,
+      showChevron: !isAddressLoading,
+      trailing: isAddressLoading
+          ? SizedBox(
+              width: context.r(18),
+              height: context.r(18),
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
     ),
   );
 }
@@ -494,9 +582,14 @@ class _FieldShell extends StatelessWidget {
 }
 
 class _FieldValue extends StatelessWidget {
-  const _FieldValue({required this.value, required this.showChevron});
+  const _FieldValue({
+    required this.value,
+    required this.showChevron,
+    this.trailing,
+  });
   final String value;
   final bool showChevron;
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) => Container(
     height: context.r(48),
@@ -515,7 +608,9 @@ class _FieldValue extends StatelessWidget {
             fontSize: context.r(14),
           ),
         ),
-        if (showChevron)
+        if (trailing != null)
+          trailing!
+        else if (showChevron)
           Image.asset(
             AppAssets.mineChevron,
             width: context.r(7),
@@ -524,6 +619,182 @@ class _FieldValue extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _FormStatus extends StatelessWidget {
+  const _FormStatus({
+    required this.message,
+    this.showProgress = false,
+    this.onRetry,
+  });
+
+  final String message;
+  final bool showProgress;
+  final Future<void> Function()? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('personalInformationStatus'),
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: context.r(732)),
+      padding: EdgeInsets.all(context.r(24)),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(context.r(12)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (showProgress) const CircularProgressIndicator(),
+          if (showProgress) SizedBox(height: context.r(16)),
+          Text(message, textAlign: TextAlign.center),
+          if (onRetry != null) ...[
+            SizedBox(height: context.r(16)),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+enum _AddressLevel { region, province, municipality }
+
+class _AddressOptionsSheet extends StatefulWidget {
+  const _AddressOptionsSheet({
+    required this.nodes,
+    required this.initialValue,
+    required this.onSelected,
+  });
+
+  final List<PersonalAddressNode> nodes;
+  final String initialValue;
+  final ValueChanged<String> onSelected;
+
+  @override
+  State<_AddressOptionsSheet> createState() => _AddressOptionsSheetState();
+}
+
+class _AddressOptionsSheetState extends State<_AddressOptionsSheet> {
+  PersonalAddressNode? _region;
+  PersonalAddressNode? _province;
+  _AddressLevel _activeLevel = _AddressLevel.region;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreInitialValue();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SizedBox(
+        key: const Key('personalInformationAddressSelectionSheet'),
+        height: context.r(464),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(context.r(12)),
+              child: Row(
+                children: [
+                  for (final level in _AddressLevel.values)
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => _selectLevel(level),
+                        child: Text(_labelFor(level)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                key: const Key('personalInformationAddressOptions'),
+                itemCount: _activeOptions.length,
+                itemBuilder: (context, index) {
+                  final option = _activeOptions[index];
+                  return ListTile(
+                    key: Key('personalInformationAddressOption-${option.id}'),
+                    title: Text(option.label),
+                    onTap: () => _selectNode(option),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<PersonalAddressNode> get _activeOptions => switch (_activeLevel) {
+    _AddressLevel.region => widget.nodes,
+    _AddressLevel.province => _region?.children ?? const [],
+    _AddressLevel.municipality => _province?.children ?? const [],
+  };
+
+  String _labelFor(_AddressLevel level) => switch (level) {
+    _AddressLevel.region => _region?.label ?? 'Region',
+    _AddressLevel.province => _province?.label ?? 'Province',
+    _AddressLevel.municipality => 'Municipality',
+  };
+
+  void _selectLevel(_AddressLevel level) {
+    if (level == _AddressLevel.province && _region == null) return;
+    if (level == _AddressLevel.municipality && _province == null) return;
+    setState(() => _activeLevel = level);
+  }
+
+  void _selectNode(PersonalAddressNode node) {
+    switch (_activeLevel) {
+      case _AddressLevel.region:
+        setState(() {
+          _region = node;
+          _province = null;
+          _activeLevel = _AddressLevel.province;
+        });
+      case _AddressLevel.province:
+        setState(() {
+          _province = node;
+          _activeLevel = _AddressLevel.municipality;
+        });
+      case _AddressLevel.municipality:
+        final region = _region;
+        final province = _province;
+        if (region == null || province == null) return;
+        widget.onSelected('${region.label}-${province.label}-${node.label}');
+    }
+  }
+
+  void _restoreInitialValue() {
+    final labels = widget.initialValue
+        .split('-')
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    if (labels.isEmpty) return;
+    _region = _findByLabel(widget.nodes, labels.first);
+    if (_region == null || labels.length < 2) {
+      _activeLevel = _AddressLevel.region;
+      return;
+    }
+    _province = _findByLabel(_region!.children, labels[1]);
+    _activeLevel = _province == null || labels.length < 3
+        ? _AddressLevel.province
+        : _AddressLevel.municipality;
+  }
+
+  PersonalAddressNode? _findByLabel(
+    List<PersonalAddressNode> nodes,
+    String label,
+  ) {
+    for (final node in nodes) {
+      if (node.label == label) return node;
+    }
+    return null;
+  }
 }
 
 class _UploadButton extends StatelessWidget {

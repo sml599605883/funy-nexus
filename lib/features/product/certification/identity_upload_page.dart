@@ -9,6 +9,7 @@ import 'package:fund_nexus/features/product/certification/identity_confirmation_
 import 'package:fund_nexus/features/product/certification/identity_upload_image_service.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_method.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/certification/widgets/identity_upload_method_panel.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
@@ -58,7 +59,10 @@ class _IdentityUploadPageState extends State<IdentityUploadPage> {
           SafeArea(
             child: Column(
               children: [
-                _UploadHeader(onBack: () => Navigator.of(context).maybePop()),
+                CertificationPageHeader(
+                  title: 'ID Verification',
+                  onBack: () => Navigator.of(context).maybePop(),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.only(bottom: context.r(16)),
@@ -70,11 +74,9 @@ class _IdentityUploadPageState extends State<IdentityUploadPage> {
                             top: context.r(32),
                             right: context.r(172),
                           ),
-                          child: SizedBox(
+                          child: CertificationGuidance(
                             key: const Key('identityUploadGuidance'),
-                            height: context.r(57),
-                            width: double.infinity,
-                            child: _AdaptiveGuidance(text: guidance),
+                            text: guidance,
                           ),
                         ),
                         SizedBox(height: context.r(31)),
@@ -227,120 +229,6 @@ class _IdentityUploadPageState extends State<IdentityUploadPage> {
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
-  }
-}
-
-class _AdaptiveGuidance extends StatelessWidget {
-  const _AdaptiveGuidance({required this.text});
-
-  static const _maxLines = 3;
-  static const _lineHeight = 19 / 16;
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final fontSize = _largestFittingFontSize(
-          text: text,
-          maxWidth: constraints.maxWidth,
-          maxHeight: constraints.maxHeight,
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-          minFontSize: context.r(12),
-          maxFontSize: context.r(28),
-        );
-        return Text(
-          text,
-          maxLines: _maxLines,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppColors.identityUploadGuidance,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-            height: _lineHeight,
-          ),
-        );
-      },
-    );
-  }
-
-  static double _largestFittingFontSize({
-    required String text,
-    required double maxWidth,
-    required double maxHeight,
-    required TextDirection textDirection,
-    required TextScaler textScaler,
-    required double minFontSize,
-    required double maxFontSize,
-  }) {
-    const step = 0.5;
-    for (
-      var fontSize = maxFontSize;
-      fontSize >= minFontSize;
-      fontSize -= step
-    ) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-            height: _lineHeight,
-          ),
-        ),
-        maxLines: _maxLines,
-        textDirection: textDirection,
-        textScaler: textScaler,
-      )..layout(maxWidth: maxWidth);
-      if (!painter.didExceedMaxLines && painter.height <= maxHeight) {
-        return fontSize;
-      }
-    }
-    return minFontSize;
-  }
-}
-
-class _UploadHeader extends StatelessWidget {
-  const _UploadHeader({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.r(60),
-      child: Row(
-        children: [
-          SizedBox(width: context.r(24)),
-          SizedBox(
-            width: context.r(24),
-            height: context.r(24),
-            child: IconButton(
-              onPressed: onBack,
-              icon: Image.asset(AppAssets.identityBackButton),
-              padding: EdgeInsets.zero,
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'ID Verification',
-                style: TextStyle(
-                  color: AppColors.identityTitle,
-                  fontSize: context.r(17),
-                  fontWeight: FontWeight.w600,
-                  height: 24 / 17,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: context.r(48)),
-        ],
-      ),
-    );
   }
 }
 

@@ -218,6 +218,71 @@ void main() {
     },
   );
 
+  test(
+    'uses the documented Fund Nexus personal-information contracts',
+    () async {
+      final requests = <RequestOptions>[];
+      final client = _client(sessionStore, (request) {
+        requests.add(request);
+        if (request.path == '/viler/chippered') {
+          return _successResponse({
+            'cornbraids': 'Complete your personal information.',
+            'orographical': [
+              {
+                'culinarians': 'Education',
+                'must': 'Please select education',
+                'fasciitis': 'education',
+                'presentableness': 'enum',
+                'bobberies': 0,
+                'rubicund': [
+                  {'emit': 'College', 'etherifying': 2},
+                ],
+                'lambadas': 0,
+                'steeplechases': 'College',
+              },
+            ],
+          });
+        }
+        if (request.path == '/viler/closets') {
+          return _successResponse({
+            'semihobos': [
+              {'fasciitis': '1', 'emit': 'Region', 'bedtimes': const []},
+            ],
+          });
+        }
+        return _successResponse({});
+      });
+      addTearDown(client.close);
+      final repository = ProductRepository(apiClient: client);
+
+      final data = await repository.fetchPersonalInformation('product-42');
+      final addresses = await repository.fetchPersonalInformationAddresses();
+      await repository.savePersonalInformation(
+        productId: 'product-42',
+        fields: const {'education': '2', 'complete_address': 'Manila'},
+      );
+
+      expect(data.fields.single.saveKey, 'education');
+      expect(data.fields.single.initialSubmitValue, '2');
+      expect(addresses.single.label, 'Region');
+      expect(requests[0].path, '/viler/chippered');
+      expect(requests[0].data, {
+        'modernised': 'product-42',
+        'movieola': hasLength(6),
+      });
+      expect(requests[1].method, 'GET');
+      expect(requests[1].path, '/viler/closets');
+      expect(requests[2].path, '/viler/requiems');
+      expect(requests[2].data, {
+        'education': '2',
+        'complete_address': 'Manila',
+        'modernised': 'product-42',
+        'chapels': hasLength(6),
+        'massiness': hasLength(6),
+      });
+    },
+  );
+
   test('uses every documented Fund Nexus identity upload field', () async {
     final directory = await Directory.systemTemp.createTemp(
       'fund_nexus_identity_upload',

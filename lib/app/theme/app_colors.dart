@@ -36,6 +36,7 @@ abstract final class AppColors {
   static const identityConfirmationLabel = Color.fromRGBO(153, 153, 153, 1);
   static const identityConfirmationDivider = Color.fromRGBO(238, 238, 238, 0.5);
   static const identityDatePickerBarrier = Color.fromRGBO(0, 0, 0, 0.6);
+  static const certificationSingleSelectText = Color.fromRGBO(24, 28, 23, 1);
   static const personalProgressTrack = Color.fromRGBO(255, 221, 111, 1);
   static const personalProgressBackgroundStart = Color.fromRGBO(
     226,
