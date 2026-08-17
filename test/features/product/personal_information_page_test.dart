@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/features/product/certification/widgets/personal_information_address_sheet.dart';
 import 'package:fund_nexus/features/product/certification/personal_information_page.dart';
 import 'package:fund_nexus/features/product/data/personal_information_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
@@ -140,13 +141,84 @@ void main() {
     expect(formCard.left, closeTo(16 * scale, 0.01));
     expect(formCard.top, closeTo(progress.bottom - 27 * scale, 0.01));
   });
+
+  testWidgets('preloads address options and reuses them when the field opens', (
+    tester,
+  ) async {
+    final gateway = _PersonalInformationGateway(addressNodes: _addressNodes);
+    await tester.pumpWidget(_page(gateway: gateway));
+    await tester.pumpAndSettle();
+
+    expect(gateway.addressLoadCount, 1);
+    final address = find.byKey(
+      const Key('personalInformation-residential_address'),
+    );
+    await tester.ensureVisible(address);
+    await tester.tap(address);
+    await tester.pumpAndSettle();
+
+    expect(gateway.addressLoadCount, 1);
+    expect(
+      find.byKey(const Key('personalInformationAddressSelectionSheet')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('selects all address levels and closes after the municipality', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    String? selected;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResponsiveScope(
+          child: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                selected = await showPersonalInformationAddressOptionsSheet(
+                  context: context,
+                  nodes: _addressNodes,
+                );
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(
+        find.byKey(const Key('personalInformationAddressSelectionSheet')),
+      ),
+      const Size(375, 464),
+    );
+    await tester.tap(find.text('NCR').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Metro Manila').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Manila').last);
+    await tester.pumpAndSettle();
+
+    expect(selected, 'NCR-Metro Manila-Manila');
+    expect(
+      find.byKey(const Key('personalInformationAddressSelectionSheet')),
+      findsNothing,
+    );
+  });
 }
 
 bool _hasFocusedTextField(WidgetTester tester) => tester
     .widgetList<EditableText>(find.byType(EditableText))
     .any((field) => field.focusNode.hasFocus);
 
-Widget _page({String guidance = ''}) {
+Widget _page({String guidance = '', PersonalInformationGateway? gateway}) {
   final sessionStore = SessionStore(_TestSessionPersistence())
     ..cacheProductDetailIdentityGuidance(guidance);
   return MaterialApp(
@@ -154,7 +226,7 @@ Widget _page({String guidance = ''}) {
       providers: [
         RepositoryProvider<SessionStore>.value(value: sessionStore),
         RepositoryProvider<PersonalInformationGateway>.value(
-          value: _PersonalInformationGateway(),
+          value: gateway ?? _PersonalInformationGateway(),
         ),
       ],
       child: const ResponsiveScope(
@@ -165,6 +237,13 @@ Widget _page({String guidance = ''}) {
 }
 
 class _PersonalInformationGateway implements PersonalInformationGateway {
+  _PersonalInformationGateway({
+    this.addressNodes = const <PersonalAddressNode>[],
+  });
+
+  final List<PersonalAddressNode> addressNodes;
+  int addressLoadCount = 0;
+
   @override
   Future<PersonalInformationData> fetchPersonalInformation(
     String productId,
@@ -249,8 +328,10 @@ class _PersonalInformationGateway implements PersonalInformationGateway {
   }
 
   @override
-  Future<List<PersonalAddressNode>> fetchPersonalInformationAddresses() async =>
-      const [];
+  Future<List<PersonalAddressNode>> fetchPersonalInformationAddresses() async {
+    addressLoadCount++;
+    return addressNodes;
+  }
 
   @override
   Future<void> savePersonalInformation({
@@ -258,6 +339,20 @@ class _PersonalInformationGateway implements PersonalInformationGateway {
     required Map<String, String> fields,
   }) async {}
 }
+
+const _addressNodes = [
+  PersonalAddressNode(
+    id: '1',
+    label: 'NCR',
+    children: [
+      PersonalAddressNode(
+        id: '2',
+        label: 'Metro Manila',
+        children: [PersonalAddressNode(id: '3', label: 'Manila', children: [])],
+      ),
+    ],
+  ),
+];
 
 Map<String, Object> _field({
   required String title,

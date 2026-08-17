@@ -56,6 +56,14 @@ abstract final class AppColors {
     183,
     1,
   );
+  static const addressPickerBarrier = Color.fromRGBO(0, 0, 0, 0.6);
+  static const addressPickerPanel = Color.fromRGBO(245, 245, 245, 1);
+  static const addressPickerActive = Color.fromRGBO(51, 195, 148, 1);
+  static const addressPickerLabel = Color.fromRGBO(42, 42, 41, 1);
+  static const addressPickerSelected = Color.fromRGBO(13, 27, 23, 1);
+  static const addressPickerOption = Color.fromRGBO(102, 102, 102, 1);
+  static const addressPickerMuted = Color.fromRGBO(153, 153, 153, 1);
+  static const addressPickerDivider = Color.fromRGBO(238, 238, 238, 1);
   static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
   static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);

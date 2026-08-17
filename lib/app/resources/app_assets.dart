@@ -19,6 +19,12 @@ abstract final class AppAssets {
       'assets/identity_upload_background.png';
   static const identityUploadExamples = 'assets/identity_upload_examples.png';
   static const identityFaceExamples = 'assets/identity_face_examples.png';
+  static const addressPickerClose =
+      'assets/address_picker/address_picker_close.png';
+  static const addressPickerChevron =
+      'assets/address_picker/address_picker_chevron.png';
+  static const addressPickerOptionsBackground =
+      'assets/address_picker/address_picker_options_background.png';
 
   static const mineOrderAll = 'assets/mine_orders_all.png';
   static const mineOrderUnpaid = 'assets/mine_orders_unpaid.png';

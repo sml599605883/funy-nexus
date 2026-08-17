@@ -43,6 +43,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   String _prompt = '';
   String _loadError = '';
   String? _addressLoadingKey;
+  Future<List<PersonalAddressNode>>? _addressPreloadFuture;
   bool _submitting = false;
 
   PersonalInformationGateway get _gateway =>
@@ -51,6 +52,10 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   @override
   void initState() {
     super.initState();
+    _addressPreloadFuture = _preloadAddressOptions();
+    unawaited(
+      _addressPreloadFuture!.catchError((_) => const <PersonalAddressNode>[]),
+    );
     unawaited(_load());
   }
 
@@ -238,40 +243,59 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     if (_addressLoadingKey != null) return;
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _addressLoadingKey = field.data.saveKey);
+    late final List<PersonalAddressNode> nodes;
     try {
-      _addressNodes ??= await _gateway.fetchPersonalInformationAddresses();
-      if (!mounted) return;
-      final nodes = _addressNodes!;
-      if (nodes.isEmpty) {
-        throw const ApiException(
-          type: ApiFailureType.invalidResponse,
-          message: 'No address options available.',
-        );
-      }
-      final selected = await showModalBottomSheet<String>(
-        context: context,
-        backgroundColor: AppColors.surface,
-        builder: (sheetContext) => PersonalInformationAddressOptionsSheet(
-          nodes: nodes,
-          initialValue: field.submitValue,
-          onSelected: (value) => Navigator.of(sheetContext).pop(value),
-        ),
-      );
-      if (selected != null && mounted) {
-        setState(() {
-          field.submitValue = selected;
-          field.controller.text = selected;
-        });
-      }
+      nodes = await _addressOptionsForSelection();
     } catch (error) {
       if (mounted) {
         await EasyLoading.showError(
           _messageFor(error, fallback: 'Unable to load address options.'),
         );
       }
+      return;
     } finally {
       if (mounted) setState(() => _addressLoadingKey = null);
     }
+    if (!mounted) return;
+    final selected = await showPersonalInformationAddressOptionsSheet(
+      context: context,
+      nodes: nodes,
+      initialValue: field.submitValue,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        field.submitValue = selected;
+        field.controller.text = selected;
+      });
+    }
+  }
+
+  Future<List<PersonalAddressNode>> _addressOptionsForSelection() async {
+    final cachedNodes = _addressNodes;
+    if (cachedNodes != null) return cachedNodes;
+
+    final preload = _addressPreloadFuture;
+    if (preload != null) {
+      try {
+        return await preload;
+      } catch (_) {
+        _addressPreloadFuture = null;
+      }
+    }
+
+    return _addressPreloadFuture ??= _preloadAddressOptions();
+  }
+
+  Future<List<PersonalAddressNode>> _preloadAddressOptions() async {
+    final nodes = await _gateway.fetchPersonalInformationAddresses();
+    if (nodes.isEmpty) {
+      throw const ApiException(
+        type: ApiFailureType.invalidResponse,
+        message: 'No address options available.',
+      );
+    }
+    if (mounted) _addressNodes = nodes;
+    return nodes;
   }
 
   Future<void> _submit() async {
