@@ -24,10 +24,12 @@ class IdentitySelectionPage extends StatefulWidget {
 class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
   ProductIdentityData? _identityData;
   Object? _error;
+  late final int _scene2StartTimeSeconds;
 
   @override
   void initState() {
     super.initState();
+    _scene2StartTimeSeconds = ReportService.nowSeconds();
     _loadIdentityOptions();
   }
 
@@ -70,6 +72,7 @@ class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
                     error: _error,
                     onRetry: _loadIdentityOptions,
                     productId: widget.productId,
+                    scene2StartTimeSeconds: _scene2StartTimeSeconds,
                   ),
                 ),
               ],
@@ -129,12 +132,14 @@ class _IdentityBody extends StatelessWidget {
     required this.error,
     required this.onRetry,
     required this.productId,
+    required this.scene2StartTimeSeconds,
   });
 
   final ProductIdentityData? data;
   final Object? error;
   final Future<void> Function() onRetry;
   final String productId;
+  final int scene2StartTimeSeconds;
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +171,7 @@ class _IdentityBody extends StatelessWidget {
             title: 'Recommended ID Type',
             types: data!.recommendedTypes,
             productId: productId,
+            scene2StartTimeSeconds: scene2StartTimeSeconds,
           ),
           if (data!.otherTypes.isNotEmpty) ...[
             SizedBox(height: context.r(12)),
@@ -173,6 +179,7 @@ class _IdentityBody extends StatelessWidget {
               title: 'Other Options',
               types: data!.otherTypes,
               productId: productId,
+              scene2StartTimeSeconds: scene2StartTimeSeconds,
             ),
           ],
         ],
@@ -207,11 +214,13 @@ class _IdentitySection extends StatelessWidget {
     required this.title,
     required this.types,
     required this.productId,
+    required this.scene2StartTimeSeconds,
   });
 
   final String title;
   final List<String> types;
   final String productId;
+  final int scene2StartTimeSeconds;
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +255,11 @@ class _IdentitySection extends StatelessWidget {
             child: Column(
               children: [
                 for (var index = 0; index < types.length; index++) ...[
-                  _IdentityTypeRow(type: types[index], productId: productId),
+                  _IdentityTypeRow(
+                    type: types[index],
+                    productId: productId,
+                    scene2StartTimeSeconds: scene2StartTimeSeconds,
+                  ),
                   if (index != types.length - 1)
                     _DashedDivider(color: AppColors.identityDivider),
                 ],
@@ -341,10 +354,15 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _IdentityTypeRow extends StatelessWidget {
-  const _IdentityTypeRow({required this.type, required this.productId});
+  const _IdentityTypeRow({
+    required this.type,
+    required this.productId,
+    required this.scene2StartTimeSeconds,
+  });
 
   final String type;
   final String productId;
+  final int scene2StartTimeSeconds;
 
   @override
   Widget build(BuildContext context) {
@@ -357,6 +375,7 @@ class _IdentityTypeRow extends StatelessWidget {
             context.read<ReportService?>(),
             productId: productId,
             sceneType: '2',
+            startedAtSeconds: scene2StartTimeSeconds,
           );
           unawaited(
             Navigator.of(context).push<void>(
