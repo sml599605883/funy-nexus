@@ -201,9 +201,12 @@ class _MainShellPageState extends State<MainShellPage>
   }
 
   Widget _buildLoginPage(BuildContext context) {
+    final riskStartedAtSeconds = ReportService.nowSeconds();
     return LoginPage(
       onLoginSuccess: () async {
-        await widget.reportService?.loginSucceeded();
+        await widget.reportService?.loginSucceeded(
+          riskStartedAtSeconds: riskStartedAtSeconds,
+        );
         if (context.mounted) Navigator.of(context).pop(true);
       },
     );

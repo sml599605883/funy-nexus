@@ -111,7 +111,7 @@ class FundNexusApp extends StatelessWidget {
           ],
           child: MainShellPage(
             sessionExpiryEvents: sessionExpiryCoordinator.events,
-            reportService: reportService,
+            reportService: reporter,
           ),
         ),
       ),

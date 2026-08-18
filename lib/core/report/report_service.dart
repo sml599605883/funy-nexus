@@ -77,13 +77,13 @@ class ReportService {
     await reportPushToken();
   }
 
-  Future<void> loginSucceeded() async {
+  Future<void> loginSucceeded({int? riskStartedAtSeconds}) async {
     await store.saveLoginAt(_nowMillis());
     unawaited(
       reportRisk(
         productId: '',
         sceneType: '1',
-        startTimeSeconds: _nowMillis() ~/ 1000,
+        startTimeSeconds: riskStartedAtSeconds ?? _nowMillis() ~/ 1000,
       ),
     );
     unawaited(reportGoogleMarket());

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/state/async_state.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
@@ -89,8 +90,18 @@ class HomePage extends StatelessWidget {
       productId: card.productId,
       openLogin: (productId) async {
         if (!context.mounted) return false;
+        final riskStartedAtSeconds = ReportService.nowSeconds();
         return await Navigator.of(context).push<bool>(
-              MaterialPageRoute<bool>(builder: (_) => const LoginPage()),
+              MaterialPageRoute<bool>(
+                builder: (_) => LoginPage(
+                  onLoginSuccess: () async {
+                    await context.read<ReportService>().loginSucceeded(
+                      riskStartedAtSeconds: riskStartedAtSeconds,
+                    );
+                    if (context.mounted) Navigator.of(context).pop(true);
+                  },
+                ),
+              ),
             ) ??
             false;
       },
