@@ -10,6 +10,7 @@ import 'package:fund_nexus/core/network/api_crypto.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/features/home/data/home_repository.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/main_shell/main_shell_page.dart';
@@ -24,6 +25,7 @@ class FundNexusApp extends StatelessWidget {
     required this.config,
     required this.sessionStore,
     required this.sessionExpiryCoordinator,
+    this.reportService,
     super.key,
   });
 
@@ -32,9 +34,17 @@ class FundNexusApp extends StatelessWidget {
   final AppConfig config;
   final SessionStore sessionStore;
   final SessionExpiryCoordinator sessionExpiryCoordinator;
+  final ReportService? reportService;
 
   @override
   Widget build(BuildContext context) {
+    final reporter =
+        reportService ??
+        ReportService(
+          apiClient: apiClient,
+          sessionStore: sessionStore,
+          apiCrypto: apiCrypto,
+        );
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AppConfig>.value(value: config),
@@ -42,6 +52,7 @@ class FundNexusApp extends StatelessWidget {
         RepositoryProvider<SessionExpiryCoordinator>.value(
           value: sessionExpiryCoordinator,
         ),
+        RepositoryProvider<ReportService>.value(value: reporter),
         RepositoryProvider<ApiClient>.value(value: apiClient),
         RepositoryProvider<ApiCrypto>.value(value: apiCrypto),
         RepositoryProvider<ProductGateway>(
@@ -50,6 +61,14 @@ class FundNexusApp extends StatelessWidget {
         RepositoryProvider<PersonalInformationGateway>(
           create: (context) =>
               context.read<ProductGateway>() as PersonalInformationGateway,
+        ),
+        RepositoryProvider<EmergencyContactGateway>(
+          create: (context) =>
+              context.read<ProductGateway>() as EmergencyContactGateway,
+        ),
+        RepositoryProvider<BindCardGateway>(
+          create: (context) =>
+              context.read<ProductGateway>() as BindCardGateway,
         ),
         RepositoryProvider<FaceVerificationGateway>(
           create: (context) =>
@@ -63,6 +82,7 @@ class FundNexusApp extends StatelessWidget {
             repository: context.read<ProductGateway>(),
             sessionStore: sessionStore,
             permissions: context.read<PermissionCoordinator>(),
+            reportService: reporter,
           ),
         ),
       ],
@@ -91,6 +111,7 @@ class FundNexusApp extends StatelessWidget {
           ],
           child: MainShellPage(
             sessionExpiryEvents: sessionExpiryCoordinator.events,
+            reportService: reportService,
           ),
         ),
       ),

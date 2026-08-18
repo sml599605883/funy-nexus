@@ -12,6 +12,7 @@ import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/capture_proxy.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,11 @@ Future<void> main() async {
     key: config.encryptionKey,
     iv: config.encryptionIv,
   );
+  final reportService = ReportService(
+    apiClient: apiClient,
+    sessionStore: sessionStore,
+    apiCrypto: apiCrypto,
+  );
 
   runApp(
     StartupNetworkGate(
@@ -62,6 +68,7 @@ Future<void> main() async {
         config: config,
         sessionStore: sessionStore,
         sessionExpiryCoordinator: sessionExpiryCoordinator,
+        reportService: reportService,
       ),
     ),
   );

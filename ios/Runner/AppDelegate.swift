@@ -6,6 +6,7 @@ import TDMobRisk
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let faceLivenessBridge = FaceLivenessBridge()
+  private let reportBridge = FundReportBridge.shared
 
   override func application(
     _ application: UIApplication,
@@ -55,6 +56,15 @@ import TDMobRisk
       }
       self?.faceLivenessBridge.start(call.arguments, result: result)
     }
+    reportBridge.register(binaryMessenger: registrar.messenger())
+  }
+
+  override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    reportBridge.updatePushToken(deviceToken.map { String(format: "%02x", $0) }.joined())
+  }
+
+  override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    reportBridge.updatePushToken("")
   }
 }
 

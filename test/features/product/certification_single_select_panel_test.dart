@@ -130,6 +130,64 @@ void main() {
 
     expect(find.text('Option 6'), findsOneWidget);
   });
+
+  testWidgets(
+    'shows custom option content and keeps maintenance options tappable',
+    (tester) async {
+      _PanelOption? selected;
+      const options = [
+        _PanelOption(
+          'GCash e-wallet',
+          'Under maintenance. Loans may be delayed',
+        ),
+        _PanelOption('PayMaya e-wallet', ''),
+      ];
+      await tester.pumpWidget(
+        _app(
+          onPressed: (context) async {
+            selected = await showCertificationSingleSelectPanel<_PanelOption>(
+              context,
+              options: options,
+              labelBuilder: (option) => option.label,
+              leadingBuilder: (option) => option.label == 'GCash e-wallet'
+                  ? Container(key: Key('logo-${option.label}'))
+                  : null,
+              secondaryLabelBuilder: (option) => option.maintenanceMessage,
+            );
+          },
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('openSingleSelect')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('logo-GCash e-wallet')), findsOneWidget);
+      expect(
+        find.text('Under maintenance. Loans may be delayed'),
+        findsOneWidget,
+      );
+      final logoLessLabel = tester.getRect(find.text('PayMaya e-wallet'));
+      final optionsRect = tester.getRect(
+        find.byKey(const Key('certificationSingleSelectOptions')),
+      );
+      expect(logoLessLabel.center.dx, closeTo(optionsRect.center.dx, 0.01));
+      expect(find.byIcon(Icons.check), findsNothing);
+
+      await tester.tap(
+        find.byKey(const Key('certificationSingleSelectOption-0')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(selected, options.first);
+    },
+  );
+}
+
+class _PanelOption {
+  const _PanelOption(this.label, this.maintenanceMessage);
+
+  final String label;
+  final String maintenanceMessage;
 }
 
 Widget _app({required Future<void> Function(BuildContext) onPressed}) {

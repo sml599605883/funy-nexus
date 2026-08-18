@@ -11,6 +11,7 @@ import 'package:fund_nexus/core/network/capture_adapter.dart';
 import 'package:fund_nexus/core/network/login_response_data.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
+import 'package:fund_nexus/core/json/json.dart';
 
 typedef ApiDataDecoder<T> = T Function(Object? data);
 
@@ -132,6 +133,125 @@ class ApiClient {
     );
   }
 
+  Future<ApiResponse<Json>> reportLocation({
+    String? province,
+    required String countryCode,
+    required String country,
+    required String street,
+    required String latitude,
+    required String longitude,
+    required String city,
+  }) {
+    return post<Json>(
+      '/viler/hoblike',
+      data: {
+        'sustenances': province,
+        'glabrate': countryCode,
+        'kundalini': country,
+        'unchangeable': street,
+        'discolour': latitude,
+        'bootstrap': longitude,
+        'cherubic': city,
+        'benzanthracene': ApiSignature.randomDigits(6),
+        'pneumonitises': ApiSignature.randomDigits(6),
+      },
+      decode: (data) => Json(data),
+    );
+  }
+
+  Future<ApiResponse<Json>> reportGoogleMarket({
+    required String idfv,
+    required String idfa,
+  }) {
+    return post<Json>(
+      '/viler/filthier',
+      data: {
+        'quillwort': idfv,
+        'supercontinent': ApiSignature.randomDigits(6),
+        'carpers': idfa,
+      },
+      decode: (data) => Json(data),
+    );
+  }
+
+  Future<ApiResponse<void>> reportRiskBehavior({
+    required String productId,
+    required String sceneType,
+    required String orderNo,
+    required String riskDeviceId,
+    required String idfa,
+    required String longitude,
+    required String latitude,
+    required String startTime,
+    required String endTime,
+  }) {
+    return post<void>(
+      '/viler/bravenesses',
+      data: {
+        'pesters': productId,
+        'verbifies': sceneType,
+        'readjusts': orderNo,
+        'vindicators': riskDeviceId,
+        'mercantilisms': idfa,
+        'bootstrap': longitude,
+        'discolour': latitude,
+        'dingbat': startTime,
+        'mammocks': endTime,
+        'grandstanding': latitude,
+      },
+      decode: (_) {},
+    );
+  }
+
+  Future<ApiResponse<void>> reportDeviceInfo({
+    required String encryptedPayload,
+  }) {
+    return post<void>(
+      '/viler/uremia',
+      data: {'foresight': encryptedPayload},
+      decode: (_) {},
+    );
+  }
+
+  Future<ApiResponse<void>> reportApplePushToken({required String token}) {
+    return post<void>(
+      '/viler/gossans',
+      data: {'syncarps': token},
+      decode: (_) {},
+    );
+  }
+
+  Future<ApiResponse<void>> reportContacts({required String encryptedPayload}) {
+    return post<void>(
+      '/viler/crisscrossing',
+      data: {
+        'etherifying': '3',
+        'interposers': ApiSignature.randomDigits(6),
+        'multilateralism': ApiSignature.randomDigits(6),
+        'foresight': encryptedPayload,
+      },
+      decode: (_) {},
+    );
+  }
+
+  Future<ApiResponse<void>> reportTrustDecisionResult({
+    required String livenessId,
+    required String requestId,
+    required String resultCode,
+    required String result,
+  }) {
+    return post<void>(
+      '/viler/apparentness',
+      data: {
+        'boors': livenessId,
+        'speechwriter': requestId,
+        'bootees': resultCode,
+        'trokes': result,
+      },
+      decode: (_) {},
+    );
+  }
+
   Future<ApiResponse<T>> get<T>(
     String path, {
     Map<String, Object?>? queryParameters,
@@ -155,6 +275,7 @@ class ApiClient {
     Map<String, Object?>? queryParameters,
     String contentType = Headers.formUrlEncodedContentType,
     CancelToken? cancelToken,
+    Set<String> additionalSuccessCodes = const {},
     required ApiDataDecoder<T> decode,
   }) {
     return request(
@@ -164,6 +285,7 @@ class ApiClient {
       queryParameters: queryParameters,
       contentType: contentType,
       cancelToken: cancelToken,
+      additionalSuccessCodes: additionalSuccessCodes,
       decode: decode,
     );
   }
@@ -193,6 +315,7 @@ class ApiClient {
     Map<String, Object?>? queryParameters,
     String? contentType,
     CancelToken? cancelToken,
+    Set<String> additionalSuccessCodes = const {},
     required ApiDataDecoder<T> decode,
   }) async {
     try {
@@ -207,7 +330,11 @@ class ApiClient {
         options: Options(method: method, contentType: contentType),
         cancelToken: cancelToken,
       );
-      return _decode(response.data, decode);
+      return _decode(
+        response.data,
+        decode,
+        additionalSuccessCodes: additionalSuccessCodes,
+      );
     } on ApiException catch (error) {
       if (error.type == ApiFailureType.authentication) {
         await sessionExpiryCoordinator?.handleExpiredSession();
@@ -224,7 +351,11 @@ class ApiClient {
     }
   }
 
-  ApiResponse<T> _decode<T>(Object? body, ApiDataDecoder<T> decode) {
+  ApiResponse<T> _decode<T>(
+    Object? body,
+    ApiDataDecoder<T> decode, {
+    Set<String> additionalSuccessCodes = const {},
+  }) {
     if (body is! Map) {
       throw const ApiException(
         type: ApiFailureType.invalidResponse,
@@ -242,7 +373,12 @@ class ApiClient {
 
     final code = codeValue.toString();
     final message = body[protocol.messageKey]?.toString() ?? '';
-    if (!protocol.isSuccess(codeValue)) {
+    final isAdditionalSuccess =
+        additionalSuccessCodes.contains(code) ||
+        additionalSuccessCodes.any(
+          (successCode) => int.tryParse(successCode) == int.tryParse(code),
+        );
+    if (!protocol.isSuccess(codeValue) && !isAdditionalSuccess) {
       if (protocol.isAuthExpired(codeValue)) {
         throw ApiException(
           type: ApiFailureType.authentication,

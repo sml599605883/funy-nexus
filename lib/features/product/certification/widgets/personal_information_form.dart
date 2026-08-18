@@ -80,9 +80,29 @@ class PersonalInformationFieldView extends StatelessWidget {
 }
 
 class PersonalInformationInputField extends StatelessWidget {
-  const PersonalInformationInputField({required this.field, super.key});
+  PersonalInformationInputField({
+    required PersonalInformationFieldState field,
+    super.key,
+  }) : controller = field.controller,
+       numericKeyboard = field.data.numericKeyboard,
+       placeholder = field.data.placeholder,
+       inputKey = Key('personalInformationInput-${field.data.saveKey}'),
+       focusNode = null;
 
-  final PersonalInformationFieldState field;
+  const PersonalInformationInputField.value({
+    required this.controller,
+    required this.numericKeyboard,
+    required this.placeholder,
+    required this.inputKey,
+    this.focusNode,
+    super.key,
+  });
+
+  final TextEditingController controller;
+  final bool numericKeyboard;
+  final String placeholder;
+  final Key inputKey;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -96,13 +116,14 @@ class PersonalInformationInputField extends StatelessWidget {
       children: [
         Expanded(
           child: TextField(
-            key: Key('personalInformationInput-${field.data.saveKey}'),
-            controller: field.controller,
-            keyboardType: field.data.numericKeyboard
+            key: inputKey,
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: numericKeyboard
                 ? TextInputType.number
                 : TextInputType.text,
             decoration: InputDecoration(
-              hintText: field.data.placeholder,
+              hintText: placeholder,
               hintStyle: TextStyle(
                 color: AppColors.personalInformationPlaceholder,
                 fontSize: context.r(14),

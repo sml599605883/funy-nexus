@@ -13,16 +13,19 @@ import 'package:fund_nexus/features/login/login_page.dart';
 import 'package:fund_nexus/features/main_shell/state/main_tab_cubit.dart';
 import 'package:fund_nexus/features/mine/mine_page.dart';
 import 'package:fund_nexus/features/progress/progress_page.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
 
 class MainShellPage extends StatefulWidget {
   const MainShellPage({
     this.loginPageBuilder,
     this.sessionExpiryEvents,
+    this.reportService,
     super.key,
   });
 
   final WidgetBuilder? loginPageBuilder;
   final Stream<void>? sessionExpiryEvents;
+  final ReportService? reportService;
 
   @override
   State<MainShellPage> createState() => _MainShellPageState();
@@ -61,6 +64,7 @@ class _MainShellPageState extends State<MainShellPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(widget.reportService?.start());
   }
 
   @override
@@ -110,6 +114,7 @@ class _MainShellPageState extends State<MainShellPage>
     final resumedFromBackground = _wasInBackground;
     _wasInBackground = false;
     if (!resumedFromBackground) return;
+    unawaited(widget.reportService?.resumed());
     _refreshHomeIfVisible();
   }
 
@@ -154,7 +159,7 @@ class _MainShellPageState extends State<MainShellPage>
       try {
         await Navigator.of(context).push<bool>(
           MaterialPageRoute<bool>(
-            builder: widget.loginPageBuilder ?? (_) => const LoginPage(),
+            builder: widget.loginPageBuilder ?? _buildLoginPage,
           ),
         );
       } finally {
@@ -179,7 +184,7 @@ class _MainShellPageState extends State<MainShellPage>
     try {
       await Navigator.of(context).push<bool>(
         MaterialPageRoute<bool>(
-          builder: widget.loginPageBuilder ?? (_) => const LoginPage(),
+          builder: widget.loginPageBuilder ?? _buildLoginPage,
         ),
       );
     } finally {
@@ -193,6 +198,15 @@ class _MainShellPageState extends State<MainShellPage>
       return;
     }
     unawaited(context.read<HomeCubit>().load());
+  }
+
+  Widget _buildLoginPage(BuildContext context) {
+    return LoginPage(
+      onLoginSuccess: () async {
+        await widget.reportService?.loginSucceeded();
+        if (context.mounted) Navigator.of(context).pop(true);
+      },
+    );
   }
 }
 

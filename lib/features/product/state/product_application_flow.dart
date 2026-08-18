@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 
@@ -17,11 +20,13 @@ class ProductApplicationFlow {
     required this.repository,
     required this.sessionStore,
     required this.permissions,
+    this.reportService,
   });
 
   final ProductGateway repository;
   final SessionStore sessionStore;
   final PermissionCoordinator permissions;
+  final ReportService? reportService;
   bool _requestInFlight = false;
 
   Future<void> apply({
@@ -213,12 +218,24 @@ class ProductApplicationFlow {
       await showMessage('Product details are not ready yet.');
       return;
     }
+    final reportStart = ReportService.nowSeconds();
     final destination = await repository.fetchLoanDestination(
       orderNumber: detail.product.orderNumber,
       amount: detail.product.amount,
       loanTerm: detail.product.loanTerm,
       termType: detail.product.termType,
     );
+    final reporter = reportService;
+    if (reporter != null) {
+      unawaited(
+        reporter.reportRisk(
+          productId: productId,
+          sceneType: '9',
+          orderNo: detail.product.orderNumber,
+          startTimeSeconds: reportStart,
+        ),
+      );
+    }
     if (productWebUri(destination.target) == null) {
       await showMessage('Unable to open the loan confirmation page.');
       return;

@@ -35,6 +35,22 @@ void main() {
     expect(_segmentColor(tester, 2), AppColors.certificationProgressActive);
     expect(_segmentColor(tester, 3), AppColors.certificationProgressInactive);
   });
+
+  testWidgets('uses the screen width minus horizontal margins', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(size: Size(414, 896)),
+          child: ResponsiveScope(
+            child: Scaffold(body: Center(child: CertificationProgress())),
+          ),
+        ),
+      ),
+    );
+
+    final progress = find.byType(CertificationProgress);
+    expect(tester.getSize(progress).width, 414 - 32 * 414 / 375);
+  });
 }
 
 Color? _segmentColor(WidgetTester tester, int index) => tester

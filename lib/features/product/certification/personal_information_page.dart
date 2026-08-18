@@ -8,10 +8,13 @@ import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
+import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
 import 'package:fund_nexus/features/product/certification/personal_information_field_state.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_progress.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_salary_day_panel.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_single_select_panel.dart';
 import 'package:fund_nexus/features/product/certification/widgets/personal_information_address_sheet.dart';
 import 'package:fund_nexus/features/product/certification/widgets/personal_information_form.dart';
@@ -20,15 +23,25 @@ import 'package:fund_nexus/features/product/data/product_repository.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
+enum PersonalInformationKind { personal, work }
+
 class PersonalInformationPage extends StatefulWidget {
   const PersonalInformationPage({
     required this.productId,
     this.gateway,
+    this.kind = PersonalInformationKind.personal,
     super.key,
   });
 
+  const PersonalInformationPage.work({
+    required this.productId,
+    this.gateway,
+    super.key,
+  }) : kind = PersonalInformationKind.work;
+
   final String productId;
   final PersonalInformationGateway? gateway;
+  final PersonalInformationKind kind;
 
   @override
   State<PersonalInformationPage> createState() =>
@@ -49,6 +62,11 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   PersonalInformationGateway get _gateway =>
       widget.gateway ?? context.read<PersonalInformationGateway>();
 
+  bool get _isWorkInformation => widget.kind == PersonalInformationKind.work;
+
+  String get _pageKey =>
+      _isWorkInformation ? 'workInformation' : 'personalInformation';
+
   @override
   void initState() {
     super.initState();
@@ -67,14 +85,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cachedGuidance = context
-        .read<SessionStore>()
-        .productDetailIdentityGuidance;
-    final guidance = cachedGuidance.isEmpty && _prompt.isEmpty
-        ? 'Add your work details to\nhelp us assess your\navailable credit limit.'
-        : cachedGuidance.isNotEmpty
-        ? cachedGuidance
-        : _prompt;
+    final guidance = _guidance(context);
     final busy =
         _loadState == _PersonalInformationLoadState.loading ||
         _submitting ||
@@ -102,9 +113,11 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CertificationPageHeader(
-                      title: 'Basic identity information',
+                      title: _isWorkInformation
+                          ? 'Job information'
+                          : 'Basic identity information',
                       onBack: () => Navigator.of(context).maybePop(),
-                      backButtonKey: const Key('personalInformationBack'),
+                      backButtonKey: Key('${_pageKey}Back'),
                     ),
                     Padding(
                       padding: EdgeInsets.fromLTRB(
@@ -114,16 +127,15 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                         0,
                       ),
                       child: CertificationGuidance(
-                        key: const Key('personalInformationGuidance'),
-                        text: guidance.isEmpty
-                            ? 'Add your work details to\nhelp us assess your\navailable credit limit.'
-                            : guidance,
+                        key: Key('${_pageKey}Guidance'),
+                        text: guidance,
                       ),
                     ),
                     SizedBox(height: context.r(41)),
-                    const Center(
+                    Center(
                       child: CertificationProgress(
-                        key: Key('personalInformationProgress'),
+                        key: Key('${_pageKey}Progress'),
+                        currentStep: _isWorkInformation ? 2 : 1,
                       ),
                     ),
                     Transform.translate(
@@ -162,7 +174,9 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
         showProgress: true,
       ),
       _PersonalInformationLoadState.empty => PersonalInformationFormStatus(
-        message: 'No personal information available',
+        message: _isWorkInformation
+            ? 'No work information available'
+            : 'No personal information available',
         onRetry: _load,
       ),
       _PersonalInformationLoadState.error => PersonalInformationFormStatus(
@@ -185,7 +199,9 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       });
     }
     try {
-      final data = await _gateway.fetchPersonalInformation(widget.productId);
+      final data = _isWorkInformation
+          ? await _gateway.fetchWorkInformation(widget.productId)
+          : await _gateway.fetchPersonalInformation(widget.productId);
       final fields = data.fields
           .map(PersonalInformationFieldState.new)
           .toList(growable: false);
@@ -225,6 +241,11 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   }
 
   Future<void> _selectOption(PersonalInformationFieldState field) async {
+    if (_isWorkInformation &&
+        field.data.options.any((option) => option.children.isNotEmpty)) {
+      await _selectSalaryDay(field);
+      return;
+    }
     final selected =
         await showCertificationSingleSelectPanel<PersonalInformationOption>(
           context,
@@ -235,6 +256,19 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       setState(() {
         field.submitValue = selected.value;
         field.controller.text = selected.label;
+      });
+    }
+  }
+
+  Future<void> _selectSalaryDay(PersonalInformationFieldState field) async {
+    final selected = await showCertificationSalaryDayPanel(
+      context,
+      options: field.data.options,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        field.submitValue = selected.submitValue;
+        field.controller.text = selected.displayValue;
       });
     }
   }
@@ -300,15 +334,28 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
 
   Future<void> _submit() async {
     if (_submitting) return;
+    final reportService = context.read<ReportService?>();
     final fields = <String, String>{
       for (final field in _fields) field.data.saveKey: field.currentSubmitValue,
     };
     setState(() => _submitting = true);
     try {
       await EasyLoading.show(status: 'Loading...');
-      await _gateway.savePersonalInformation(
+      if (_isWorkInformation) {
+        await _gateway.saveWorkInformation(
+          productId: widget.productId,
+          fields: fields,
+        );
+      } else {
+        await _gateway.savePersonalInformation(
+          productId: widget.productId,
+          fields: fields,
+        );
+      }
+      RiskReportScene.report(
+        reportService,
         productId: widget.productId,
-        fields: fields,
+        sceneType: _isWorkInformation ? '6' : '5',
       );
       await EasyLoading.dismiss();
       if (mounted) await _continue();
@@ -316,7 +363,12 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       await EasyLoading.dismiss();
       if (mounted) {
         await EasyLoading.showError(
-          _messageFor(error, fallback: 'Unable to save personal information.'),
+          _messageFor(
+            error,
+            fallback: _isWorkInformation
+                ? 'Unable to save work information.'
+                : 'Unable to save personal information.',
+          ),
         );
       }
     } finally {
@@ -324,10 +376,25 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     }
   }
 
-  String _messageFor(
-    Object error, {
-    String fallback = 'Unable to load personal information.',
-  }) => error is ApiException ? error.message : fallback;
+  String _messageFor(Object error, {String? fallback}) => error is ApiException
+      ? error.message
+      : fallback ??
+            (_isWorkInformation
+                ? 'Unable to load work information.'
+                : 'Unable to load personal information.');
+
+  String _guidance(BuildContext context) {
+    const defaultGuidance =
+        'Add your work details to\nhelp us assess your\navailable credit limit.';
+    if (_isWorkInformation) {
+      return _prompt.isEmpty ? defaultGuidance : _prompt;
+    }
+    final cachedGuidance = context
+        .read<SessionStore>()
+        .productDetailIdentityGuidance;
+    if (cachedGuidance.isNotEmpty) return cachedGuidance;
+    return _prompt.isEmpty ? defaultGuidance : _prompt;
+  }
 
   Future<void> _continue() async {
     if (!mounted) return;

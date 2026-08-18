@@ -14,6 +14,7 @@ import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/api_signature.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/home/data/home_repository.dart';
+import 'package:fund_nexus/features/product/data/bind_card_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 
 void main() {
@@ -282,6 +283,125 @@ void main() {
       });
     },
   );
+
+  test('uses the documented Fund Nexus work-information contracts', () async {
+    final requests = <RequestOptions>[];
+    final client = _client(sessionStore, (request) {
+      requests.add(request);
+      if (request.path == '/viler/externalising') {
+        return _successResponse({
+          'cornbraids': 'Complete your work information.',
+          'orographical': [
+            {
+              'culinarians': 'Company Name',
+              'must': 'Please input company name',
+              'fasciitis': 'freshly',
+              'presentableness': 'onto',
+              'bobberies': 0,
+              'rubicund': const [],
+              'lambadas': 0,
+              'steeplechases': 'SPSS',
+            },
+          ],
+        });
+      }
+      return _successResponse({});
+    });
+    addTearDown(client.close);
+    final repository = ProductRepository(apiClient: client);
+
+    final data = await repository.fetchWorkInformation('product-42');
+    await repository.saveWorkInformation(
+      productId: 'product-42',
+      fields: const {'freshly': 'SPSS', 'opportunities': '11'},
+    );
+
+    expect(data.fields.single.saveKey, 'freshly');
+    expect(requests[0].method, 'GET');
+    expect(requests[0].path, '/viler/externalising');
+    expect(requests[0].queryParameters['modernised'], 'product-42');
+    expect(requests[0].queryParameters['movieola'], hasLength(6));
+    expect(requests[1].method, 'POST');
+    expect(requests[1].path, '/viler/semihobos');
+    expect(requests[1].data, {
+      'freshly': 'SPSS',
+      'opportunities': '11',
+      'modernised': 'product-42',
+      'conducted': hasLength(6),
+      'settlors': hasLength(6),
+      'confusional': hasLength(6),
+    });
+  });
+
+  test('uses bind-card contracts and handles its liveness challenge', () async {
+    final requests = <RequestOptions>[];
+    final client = _client(sessionStore, (request) {
+      requests.add(request);
+      if (request.path == '/viler/ecclesia') {
+        return _successResponse({
+          'cornbraids': 'Choose an account.',
+          'zebroid': 'Check it carefully.',
+          'orographical': [
+            {
+              'culinarians': 'Bank',
+              'etherifying': 2,
+              'orographical': [
+                {
+                  'culinarians': 'Bank Account',
+                  'fasciitis': 'cardNo',
+                  'must': 'Please enter your bank account',
+                  'presentableness': 'txt',
+                  'rubicund': const [],
+                  'lambadas': 0,
+                },
+              ],
+            },
+          ],
+        });
+      }
+      return _jsonResponse({
+        'fasciitis': '20000',
+        'bravo': '',
+        'foresight': const {},
+      });
+    });
+    addTearDown(client.close);
+    final repository = ProductRepository(apiClient: client);
+
+    final data = await repository.fetchBindCard('product-42');
+    final result = await repository.submitBindCard(
+      productId: 'product-42',
+      cardType: '2',
+      fields: const {
+        'channelCode': 'BDO',
+        'cardNo': '0123456789',
+        'confirmCardNo': '0123456789',
+      },
+      liveness: const BindCardLivenessPayload(),
+    );
+
+    expect(data.groups.single.type, '2');
+    expect(data.topPrompt, 'Choose an account.');
+    expect(data.bottomPrompt, 'Check it carefully.');
+    expect(result.code, '20000');
+    expect(requests[0].method, 'GET');
+    expect(requests[0].path, '/viler/ecclesia');
+    expect(requests[0].queryParameters['modernised'], 'product-42');
+    expect(requests[0].queryParameters['grandstanding'], hasLength(6));
+    expect(requests[0].queryParameters['unequaled'], hasLength(6));
+    expect(requests[1].path, '/viler/redepositing');
+    expect(requests[1].data, {
+      'modernised': 'product-42',
+      'symptoms': '2',
+      'channelCode': 'BDO',
+      'cardNo': '0123456789',
+      'confirmCardNo': '0123456789',
+      'myxomatoses': hasLength(7),
+      'wealthily': '',
+      'gibbon': '',
+      'mosque': '',
+    });
+  });
 
   test('uses every documented Fund Nexus identity upload field', () async {
     final directory = await Directory.systemTemp.createTemp(

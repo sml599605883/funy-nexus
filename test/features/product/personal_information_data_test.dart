@@ -74,6 +74,37 @@ void main() {
     expect(nodes.single.children.single.children.single.label, 'City');
   });
 
+  test('parses a nested work payday option', () {
+    final data = PersonalInformationData.fromJson({
+      'foresight': {
+        'orographical': [
+          {
+            'culinarians': 'Payday',
+            'must': 'Please select payday',
+            'fasciitis': 'opportunities',
+            'presentableness': 'stepped',
+            'bobberies': 0,
+            'rubicund': [
+              {
+                'emit': 'Once a Month',
+                'etherifying': 4,
+                'rubicund': [
+                  {'emit': 1, 'etherifying': 11},
+                ],
+              },
+            ],
+            'lambadas': 0,
+            'steeplechases': 'Once a Month|1',
+          },
+        ],
+      },
+    });
+
+    final payday = data.fields.single;
+    expect(payday.options.single.children.single.label, '1');
+    expect(payday.options.single.children.single.value, '11');
+  });
+
   test('parses the current address initialization response hierarchy', () {
     final nodes = PersonalAddressNode.parseList({
       'foresight': {

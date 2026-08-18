@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/widgets/personal_information_address_sheet.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_progress.dart';
 import 'package:fund_nexus/features/product/certification/personal_information_page.dart';
 import 'package:fund_nexus/features/product/data/personal_information_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
@@ -41,6 +42,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Postgraduate'), findsOneWidget);
+  });
+
+  testWidgets('renders the work-information variant at the second step', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_page(kind: PersonalInformationKind.work));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Job information'), findsOneWidget);
+    expect(find.text('Company Name'), findsOneWidget);
+    expect(find.text('Payday'), findsOneWidget);
+    expect(
+      tester
+          .widget<CertificationProgress>(
+            find.byKey(const Key('workInformationProgress')),
+          )
+          .currentStep,
+      2,
+    );
+  });
+
+  testWidgets('selects a payday child then reopens at the parent options', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_page(kind: PersonalInformationKind.work));
+    await tester.pumpAndSettle();
+
+    final payday = find.byKey(const Key('personalInformation-opportunities'));
+    await tester.ensureVisible(payday);
+    await tester.tap(payday);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('certificationSalaryDayOption-3')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('certificationSalaryDayOption-0')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Once a Month|1'), findsOneWidget);
+
+    await tester.tap(payday);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Daily'), findsOneWidget);
+    expect(find.text('Once a Month'), findsOneWidget);
   });
 
   testWidgets('dismisses the keyboard when tapping the page blank area', (
@@ -218,7 +262,11 @@ bool _hasFocusedTextField(WidgetTester tester) => tester
     .widgetList<EditableText>(find.byType(EditableText))
     .any((field) => field.focusNode.hasFocus);
 
-Widget _page({String guidance = '', PersonalInformationGateway? gateway}) {
+Widget _page({
+  String guidance = '',
+  PersonalInformationGateway? gateway,
+  PersonalInformationKind kind = PersonalInformationKind.personal,
+}) {
   final sessionStore = SessionStore(_TestSessionPersistence())
     ..cacheProductDetailIdentityGuidance(guidance);
   return MaterialApp(
@@ -229,8 +277,8 @@ Widget _page({String guidance = '', PersonalInformationGateway? gateway}) {
           value: gateway ?? _PersonalInformationGateway(),
         ),
       ],
-      child: const ResponsiveScope(
-        child: PersonalInformationPage(productId: 'product'),
+      child: ResponsiveScope(
+        child: PersonalInformationPage(productId: 'product', kind: kind),
       ),
     ),
   );
@@ -328,6 +376,58 @@ class _PersonalInformationGateway implements PersonalInformationGateway {
   }
 
   @override
+  Future<PersonalInformationData> fetchWorkInformation(String productId) async {
+    return PersonalInformationData.fromJson({
+      'cornbraids': 'Use the work API prompt.',
+      'orographical': [
+        _field(
+          title: 'Company Name',
+          saveKey: 'freshly',
+          type: 'onto',
+          value: '',
+          placeholder: 'Please input company name',
+        ),
+        _field(
+          title: 'Payday',
+          saveKey: 'opportunities',
+          type: 'stepped',
+          value: '',
+          options: [
+            {
+              'emit': 'Daily',
+              'etherifying': 1,
+              'rubicund': [
+                {'emit': 'Daily', 'etherifying': 1},
+              ],
+            },
+            {
+              'emit': 'Weekly',
+              'etherifying': 2,
+              'rubicund': [
+                {'emit': 'Mon', 'etherifying': 2},
+              ],
+            },
+            {
+              'emit': 'Twice per Month',
+              'etherifying': 3,
+              'rubicund': [
+                {'emit': 'Payroll Date1:1--15', 'etherifying': 9},
+              ],
+            },
+            {
+              'emit': 'Once a Month',
+              'etherifying': 4,
+              'rubicund': [
+                {'emit': '1', 'etherifying': 11},
+              ],
+            },
+          ],
+        ),
+      ],
+    });
+  }
+
+  @override
   Future<List<PersonalAddressNode>> fetchPersonalInformationAddresses() async {
     addressLoadCount++;
     return addressNodes;
@@ -335,6 +435,12 @@ class _PersonalInformationGateway implements PersonalInformationGateway {
 
   @override
   Future<void> savePersonalInformation({
+    required String productId,
+    required Map<String, String> fields,
+  }) async {}
+
+  @override
+  Future<void> saveWorkInformation({
     required String productId,
     required Map<String, String> fields,
   }) async {}

@@ -3,17 +3,26 @@ import 'package:fund_nexus/core/json/json.dart';
 enum PersonalInformationControl { selection, text, address, unsupported }
 
 class PersonalInformationOption {
-  const PersonalInformationOption({required this.label, required this.value});
+  const PersonalInformationOption({
+    required this.label,
+    required this.value,
+    this.children = const [],
+  });
 
   factory PersonalInformationOption.fromJson(Json json) {
     return PersonalInformationOption(
       label: json['emit'].stringValue.trim(),
       value: json['etherifying'].stringValue.trim(),
+      children: json['rubicund'].listValue
+          .map(PersonalInformationOption.fromJson)
+          .where((option) => option.label.isNotEmpty && option.value.isNotEmpty)
+          .toList(growable: false),
     );
   }
 
   final String label;
   final String value;
+  final List<PersonalInformationOption> children;
 }
 
 class PersonalInformationField {

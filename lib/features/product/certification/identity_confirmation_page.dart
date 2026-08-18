@@ -7,6 +7,8 @@ import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
+import 'package:fund_nexus/core/report/risk_report_scene.dart';
 
 class IdentityConfirmationPage extends StatefulWidget {
   const IdentityConfirmationPage({
@@ -154,6 +156,7 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
   Future<void> _submit() async {
     if (_isSubmitting) return;
     final gateway = widget.gateway ?? context.read<ProductGateway>();
+    final reportService = context.read<ReportService?>();
     setState(() => _isSubmitting = true);
     await EasyLoading.show(status: 'Loading...');
     try {
@@ -162,6 +165,11 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
         idNumber: _idController.text.trim(),
         dateOfBirth: _birthdayController.text.trim(),
         identityType: widget.identityType,
+      );
+      RiskReportScene.report(
+        reportService,
+        productId: widget.productId,
+        sceneType: '3',
       );
       await EasyLoading.dismiss();
       if (!mounted) return;

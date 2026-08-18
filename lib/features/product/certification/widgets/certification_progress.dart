@@ -15,8 +15,9 @@ class CertificationProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeStep = currentStep.clamp(0, labels.length);
+    final width = MediaQuery.sizeOf(context).width - context.r(32);
     return SizedBox(
-      width: context.r(343),
+      width: width,
       height: context.r(67),
       child: DecoratedBox(
         decoration: BoxDecoration(

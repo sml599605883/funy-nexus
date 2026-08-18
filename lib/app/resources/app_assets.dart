@@ -17,8 +17,13 @@ abstract final class AppAssets {
       'assets/identity_section_decoration_trailing.png';
   static const identityUploadBackground =
       'assets/identity_upload_background.png';
+  static const emergencyContactPicker = 'assets/emergency_contact_picker.png';
   static const identityUploadExamples = 'assets/identity_upload_examples.png';
   static const identityFaceExamples = 'assets/identity_face_examples.png';
+  static const bindCardBackground = 'assets/bind_card/background.png';
+  static const bindCardProgressBackground =
+      'assets/bind_card/progress_background.png';
+  static const bindCardFieldChevron = 'assets/bind_card/field_chevron.png';
   static const addressPickerClose =
       'assets/address_picker/address_picker_close.png';
   static const addressPickerChevron =

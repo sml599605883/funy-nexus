@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +11,8 @@ import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/face/face_liveness_bridge.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/report/report_service.dart';
+import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
@@ -121,6 +124,7 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
   }
 
   Future<void> _submit() async {
+    final reportService = context.read<ReportService?>();
     if (_isSubmitting) return;
     final session = context.read<SessionStore>();
     final gateway = widget.gateway ?? context.read<FaceVerificationGateway>();
@@ -166,6 +170,20 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
       final result = await (widget.launchLiveness ?? _launchLiveness)(
         token.license,
       );
+      if (reportService != null) {
+        unawaited(
+          reportService.reportTrustDecisionResult(
+            livenessId: result.livenessId,
+            requestId: '',
+            resultCode: result.code,
+            result: jsonEncode({
+              'liveness_id': result.livenessId,
+              'result_code': result.code,
+              'result_message': result.message,
+            }),
+          ),
+        );
+      }
       if (!result.success) {
         throw _FaceVerificationFailure(
           result.message.isEmpty
@@ -185,6 +203,12 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
         filePath: faceImagePath,
         token: token,
         livenessId: result.livenessId,
+      );
+      RiskReportScene.report(
+        reportService,
+        productId: widget.productId,
+        sceneType: '4',
+        orderNo: widget.orderNumber,
       );
       await EasyLoading.dismiss();
       if (!mounted) return;

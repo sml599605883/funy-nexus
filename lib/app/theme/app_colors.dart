@@ -13,6 +13,7 @@ abstract final class AppColors {
   static const loginButtonShadow = Color.fromRGBO(171, 235, 214, 0.63);
   static const surface = Color.fromRGBO(255, 255, 255, 1);
   static const textPrimary = Color.fromRGBO(51, 51, 51, 1);
+  static const certificationSectionTitle = Color.fromRGBO(3, 26, 3, 1);
   static const tabUnselected = Color.fromRGBO(140, 140, 140, 1);
   static const divider = Color.fromRGBO(242, 242, 242, 1);
   static const homeBackground = Color.fromRGBO(206, 245, 232, 1);
@@ -37,6 +38,12 @@ abstract final class AppColors {
   static const identityConfirmationDivider = Color.fromRGBO(238, 238, 238, 0.5);
   static const identityDatePickerBarrier = Color.fromRGBO(0, 0, 0, 0.6);
   static const certificationSingleSelectText = Color.fromRGBO(24, 28, 23, 1);
+  static const certificationSingleSelectMaintenance = Color.fromRGBO(
+    51,
+    195,
+    148,
+    1,
+  );
   static const certificationProgressActive = Color.fromRGBO(255, 221, 111, 1);
   static const certificationProgressInactive = Color.fromRGBO(
     255,
@@ -66,6 +73,7 @@ abstract final class AppColors {
   static const addressPickerDivider = Color.fromRGBO(238, 238, 238, 1);
   static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
   static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
+  static const bindCardSuggestionBackground = Color.fromRGBO(0, 0, 0, 0.59);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);
   static const mineAvatar = Color.fromRGBO(25, 64, 226, 1);
   static const mineOrderShadow = Color.fromRGBO(0, 0, 0, 0.09);

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/face_verification_page.dart';
+import 'package:fund_nexus/features/product/certification/bind_card_page.dart';
+import 'package:fund_nexus/features/product/certification/emergency_contact_page.dart';
 import 'package:fund_nexus/features/product/certification/identity_selection_page.dart';
 import 'package:fund_nexus/features/product/certification/personal_information_page.dart';
 
@@ -23,12 +25,25 @@ class CertificationHandoffPage extends StatelessWidget {
     if (step == 'personal') {
       return PersonalInformationPage(productId: productId);
     }
+    if (step == 'work') {
+      return PersonalInformationPage.work(productId: productId);
+    }
+    if (step == 'ext') {
+      return EmergencyContactPage(productId: productId);
+    }
     if (step == 'face') {
       final session = context.read<SessionStore>();
       return FaceVerificationPage(
         productId: productId,
         orderNumber: session.productDetailOrderNumber,
         promptMessage: session.productDetailFaceGuidance,
+      );
+    }
+    if (step == 'bank') {
+      final session = context.read<SessionStore>();
+      return BindCardPage(
+        productId: productId,
+        orderNumber: session.productDetailOrderNumber,
       );
     }
     return Scaffold(
