@@ -14,6 +14,7 @@ typedef ProductLoginAction = Future<bool> Function(String productId);
 typedef ProductTargetAction = Future<void> Function(String target);
 typedef ProductStepAction =
     Future<void> Function(String step, String productId);
+typedef ProductLocationSettingsPrompt = Future<bool> Function(String message);
 
 class ProductApplicationFlow {
   ProductApplicationFlow({
@@ -38,6 +39,7 @@ class ProductApplicationFlow {
     required ProductLoadingAction showLoading,
     required ProductLoadingAction dismissLoading,
     required ProductMessageAction showMessage,
+    ProductLocationSettingsPrompt? showLocationSettingsPrompt,
   }) async {
     final normalizedId = productId.trim();
     if (normalizedId.isEmpty || _requestInFlight) return;
@@ -49,9 +51,14 @@ class ProductApplicationFlow {
       }
       if (!sessionStore.isAuthenticated) return;
 
-      if (!await _hasLocationAccess()) {
-        await showMessage('Location access is required to continue.');
-        return;
+      final locationDecision = await permissions.requestLocationAccess();
+      if (locationDecision != LocationAccessDecision.granted) {
+        final continueWithoutLocation = await _handleLocationFailure(
+          locationDecision,
+          showMessage: showMessage,
+          showLocationSettingsPrompt: showLocationSettingsPrompt,
+        );
+        if (!continueWithoutLocation) return;
       }
 
       await _runAdmission(
@@ -91,10 +98,26 @@ class ProductApplicationFlow {
     );
   }
 
-  Future<bool> _hasLocationAccess() async {
-    final location = await permissions.requestLocation();
-    return location == PermissionStatus.granted ||
-        location == PermissionStatus.limited;
+  Future<bool> _handleLocationFailure(
+    LocationAccessDecision decision, {
+    required ProductMessageAction showMessage,
+    required ProductLocationSettingsPrompt? showLocationSettingsPrompt,
+  }) async {
+    final requiresSettings =
+        decision == LocationAccessDecision.settingsRequired ||
+        decision == LocationAccessDecision.serviceDisabled;
+    final message = decision == LocationAccessDecision.serviceDisabled
+        ? 'Turn on Location Services to continue your application.'
+        : 'Location access is required to continue.';
+    if (!requiresSettings || showLocationSettingsPrompt == null) {
+      await showMessage(message);
+      return false;
+    }
+    if (await showLocationSettingsPrompt(message)) {
+      await openAppSettings();
+      return false;
+    }
+    return true;
   }
 
   Future<void> _runAdmission({
@@ -110,6 +133,7 @@ class ProductApplicationFlow {
     try {
       await showLoading();
       loadingVisible = true;
+      unawaited(reportService?.reportLocationAndDevice());
       final admission = await repository.requestAdmission(productId);
       switch (admission.disposition) {
         case ProductAdmissionDisposition.web:

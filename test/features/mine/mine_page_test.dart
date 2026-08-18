@@ -30,6 +30,23 @@ void main() {
     expect(find.byKey(const Key('mine-account')), findsOneWidget);
   });
 
+  testWidgets('opens customer service from Mine', (tester) async {
+    var customerServiceCalls = 0;
+    await tester.pumpWidget(
+      _minePage(
+        phone: '96212341300',
+        onCustomerService: () => customerServiceCalls++,
+      ),
+    );
+
+    final customerService = find.byKey(const Key('mine-customer-service'));
+    final customerServiceTap = tester.widget<InkWell>(
+      find.descendant(of: customerService, matching: find.byType(InkWell)),
+    );
+    customerServiceTap.onTap!();
+    expect(customerServiceCalls, 1);
+  });
+
   testWidgets('opens and closes the account action panel', (tester) async {
     await tester.pumpWidget(
       _minePage(phone: '96212341300', onAccountExit: (_) async => true),
@@ -156,6 +173,7 @@ Widget _minePage({
   required String phone,
   AccountExitHandler? onAccountExit,
   AccountExitMessageHandler? showMessage,
+  VoidCallback? onCustomerService,
 }) {
   return RepositoryProvider<SessionStore>.value(
     value: _TestSessionStore(phone),
@@ -165,6 +183,7 @@ Widget _minePage({
         child: Scaffold(
           body: MinePage(
             onAccountExit: onAccountExit,
+            onCustomerService: onCustomerService,
             showLoading: () async {},
             dismissLoading: () async {},
             showMessage: showMessage,

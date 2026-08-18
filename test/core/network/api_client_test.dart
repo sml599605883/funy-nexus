@@ -103,6 +103,36 @@ void main() {
     expect(capturedRequest.queryParameters['coccolith'], '');
   });
 
+  test(
+    'builds H5 public parameters only for the configured API target',
+    () async {
+      final client = _client(sessionStore, (_) => _successResponse(null));
+      addTearDown(client.close);
+
+      final relative = await client.buildSignedQuery(path: '/viler/public');
+      final sameApi = await client.buildSignedQuery(
+        path: 'https://api.example.com/viler/public?source=h5',
+      );
+
+      expect(relative['hoods'], hasLength(64));
+      expect(sameApi['hoods'], hasLength(64));
+      await expectLater(
+        client.buildSignedQuery(path: 'https://untrusted.example/viler/public'),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.type,
+            'type',
+            ApiFailureType.configuration,
+          ),
+        ),
+      );
+      await expectLater(
+        client.buildSignedQuery(path: '//untrusted.example/viler/public'),
+        throwsA(isA<ApiException>()),
+      );
+    },
+  );
+
   test('uses form encoding for regular POST requests', () async {
     late RequestOptions capturedRequest;
     final client = _client(sessionStore, (request) {

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/config/app_config.dart';
+import 'package:fund_nexus/core/navigation/customer_service_navigation.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/state/async_state.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
@@ -42,6 +44,7 @@ class HomePage extends StatelessWidget {
             data: data,
             onRefresh: context.read<HomeCubit>().load,
             onApply: (card) => _apply(context, card),
+            onCustomerService: () => _openCustomerService(context),
           );
         }
         if (previousData != null) {
@@ -52,6 +55,7 @@ class HomePage extends StatelessWidget {
                   data: previousData,
                   onRefresh: context.read<HomeCubit>().load,
                   onApply: (card) => _apply(context, card),
+                  onCustomerService: () => _openCustomerService(context),
                 ),
                 Positioned(
                   left: 0,
@@ -66,6 +70,7 @@ class HomePage extends StatelessWidget {
             data: previousData,
             onRefresh: context.read<HomeCubit>().load,
             onApply: (card) => _apply(context, card),
+            onCustomerService: () => _openCustomerService(context),
           );
         }
         if (state is AsyncFailure<HomeData>) {
@@ -126,6 +131,8 @@ class HomePage extends StatelessWidget {
       showLoading: () => EasyLoading.show(status: 'Loading...'),
       dismissLoading: EasyLoading.dismiss,
       showMessage: (message) => _showMessage(context, message),
+      showLocationSettingsPrompt: (message) =>
+          _showLocationSettingsPrompt(context, message),
     );
   }
 
@@ -140,11 +147,47 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Future<void> _openCustomerService(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductWebPage(
+          url: customerServiceUrl(context.read<AppConfig>().webBaseUrl),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showMessage(BuildContext context, String message) async {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<bool> _showLocationSettingsPrompt(
+    BuildContext context,
+    String message,
+  ) async {
+    if (!context.mounted) return false;
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Allow Location Access'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Settings'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }
 

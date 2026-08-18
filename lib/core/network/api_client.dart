@@ -71,6 +71,35 @@ class ApiClient {
   final SessionExpiryCoordinator? sessionExpiryCoordinator;
   final ApiProtocol protocol;
 
+  /// Builds the same signed public parameters used by API requests.
+  ///
+  /// The H5 bridge uses this entry point so web requests cannot construct or
+  /// override the app's signing parameters themselves.
+  Future<Map<String, Object?>> buildSignedQuery({required String path}) async {
+    final target = Uri.tryParse(path.trim());
+    if (target == null || !_isAllowedSignedTarget(target)) {
+      throw const ApiException(
+        type: ApiFailureType.configuration,
+        message: 'Signed path must target the configured API',
+      );
+    }
+    return _signature.buildSignedQuery(path: path);
+  }
+
+  bool _isAllowedSignedTarget(Uri target) {
+    if (!target.hasScheme && !target.hasAuthority) {
+      return target.path.startsWith('/') && !target.path.startsWith('//');
+    }
+    final base = Uri.tryParse(_dio.options.baseUrl);
+    if (base == null || !target.hasScheme || !target.hasAuthority) {
+      return false;
+    }
+    return (target.scheme == 'http' || target.scheme == 'https') &&
+        target.scheme == base.scheme &&
+        target.host == base.host &&
+        target.port == base.port;
+  }
+
   Future<bool> probeTransport() async {
     try {
       final response = await _dio.getUri<String>(

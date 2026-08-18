@@ -6,9 +6,14 @@ import 'package:fund_nexus/features/mine/widgets/mine_menu_item.dart';
 import 'package:fund_nexus/features/mine/widgets/mine_section_title.dart';
 
 class MineBody extends StatelessWidget {
-  const MineBody({required this.onAccountTap, super.key});
+  const MineBody({
+    required this.onAccountTap,
+    this.onCustomerService,
+    super.key,
+  });
 
   final VoidCallback onAccountTap;
+  final VoidCallback? onCustomerService;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +40,7 @@ class MineBody extends StatelessWidget {
               key: const Key('mine-customer-service'),
               iconAsset: AppAssets.mineCustomerService,
               label: 'Smart customer service',
+              onTap: onCustomerService,
             ),
             SizedBox(height: context.r(16)),
             const MineSectionTitle(label: 'About Us'),

@@ -190,6 +190,25 @@ void main() {
     expect(applyCount, 2);
   });
 
+  testWidgets('opens customer service from the header icon', (tester) async {
+    var customerServiceCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResponsiveScope(
+          child: Scaffold(
+            body: HomeContent(
+              data: const HomeData(hasSections: true),
+              onCustomerService: () => customerServiceCalls++,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('home-chat-icon')));
+    expect(customerServiceCalls, 1);
+  });
+
   testWidgets('cycles through all server banners', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

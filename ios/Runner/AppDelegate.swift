@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import StoreKit
 import CFNetwork
 import TDMobRisk
 
@@ -55,6 +56,45 @@ import TDMobRisk
         return
       }
       self?.faceLivenessBridge.start(call.arguments, result: result)
+    }
+    let reviewChannel = FlutterMethodChannel(
+      name: "fund_nexus/app_review",
+      binaryMessenger: registrar.messenger()
+    )
+    reviewChannel.setMethodCallHandler { call, result in
+      guard call.method == "requestReview" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      DispatchQueue.main.async {
+        if let scene = UIApplication.shared.connectedScenes
+          .compactMap({ $0 as? UIWindowScene })
+          .first(where: { $0.activationState == .foregroundActive }) {
+          SKStoreReviewController.requestReview(in: scene)
+        }
+        result(nil)
+      }
+    }
+    let externalUrlChannel = FlutterMethodChannel(
+      name: "fund_nexus/external_url",
+      binaryMessenger: registrar.messenger()
+    )
+    externalUrlChannel.setMethodCallHandler { call, result in
+      guard call.method == "openHttpUrl",
+            let rawUrl = call.arguments as? String,
+            let url = URL(string: rawUrl),
+            let scheme = url.scheme?.lowercased(),
+            (scheme == "http" || scheme == "https"),
+            url.host != nil
+      else {
+        result(false)
+        return
+      }
+      DispatchQueue.main.async {
+        UIApplication.shared.open(url, options: [:]) { opened in
+          result(opened)
+        }
+      }
     }
     reportBridge.register(binaryMessenger: registrar.messenger())
   }

@@ -23,6 +23,7 @@ class MinePage extends StatelessWidget {
     this.phone,
     this.onAccountExit,
     this.onAccountExitSuccess,
+    this.onCustomerService,
     this.showLoading,
     this.dismissLoading,
     this.showMessage,
@@ -32,6 +33,7 @@ class MinePage extends StatelessWidget {
   final String? phone;
   final AccountExitHandler? onAccountExit;
   final AccountExitSuccessHandler? onAccountExitSuccess;
+  final VoidCallback? onCustomerService;
   final Future<void> Function()? showLoading;
   final Future<void> Function()? dismissLoading;
   final AccountExitMessageHandler? showMessage;
@@ -55,7 +57,10 @@ class MinePage extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            child: MineBody(onAccountTap: () => _showAccountPanel(context)),
+            child: MineBody(
+              onAccountTap: () => _showAccountPanel(context),
+              onCustomerService: onCustomerService,
+            ),
           ),
           Positioned(
             top: context.r(184),

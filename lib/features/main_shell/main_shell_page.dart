@@ -7,6 +7,8 @@ import 'package:fund_nexus/app/navigation/app_route_observer.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/config/app_config.dart';
+import 'package:fund_nexus/core/navigation/customer_service_navigation.dart';
 import 'package:fund_nexus/features/home/home_page.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/login/login_page.dart';
@@ -14,6 +16,7 @@ import 'package:fund_nexus/features/main_shell/state/main_tab_cubit.dart';
 import 'package:fund_nexus/features/mine/mine_page.dart';
 import 'package:fund_nexus/features/progress/progress_page.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
+import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
 class MainShellPage extends StatefulWidget {
   const MainShellPage({
@@ -131,6 +134,7 @@ class _MainShellPageState extends State<MainShellPage>
               MinePage(
                 key: const PageStorageKey('mine-page'),
                 phone: context.read<SessionStore>().phone,
+                onCustomerService: () => _openCustomerService(context),
                 onAccountExitSuccess: () async {
                   context.read<MainTabCubit>().selectTab(0);
                   await context.read<HomeCubit>().load();
@@ -146,6 +150,16 @@ class _MainShellPageState extends State<MainShellPage>
           ),
         );
       },
+    );
+  }
+
+  Future<void> _openCustomerService(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductWebPage(
+          url: customerServiceUrl(context.read<AppConfig>().webBaseUrl),
+        ),
+      ),
     );
   }
 

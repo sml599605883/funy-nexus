@@ -83,6 +83,69 @@ void main() {
     expect(messages, ['Location access is required to continue.']);
   });
 
+  test('shows the missing-permission prompt after the first denial', () async {
+    final gateway = _Gateway();
+    var promptCalls = 0;
+    final flow = ProductApplicationFlow(
+      repository: gateway,
+      sessionStore: _session(authenticated: true),
+      permissions: PermissionCoordinator(
+        requestLocation: () async => PermissionStatus.denied,
+      ),
+    );
+
+    await flow.apply(
+      productId: 'product-1',
+      openLogin: (_) async => false,
+      openTarget: (_) async {},
+      openCreditReview: (_) async {},
+      openCertification: (step, productId) async {},
+      showLoading: () async {},
+      dismissLoading: () async {},
+      showMessage: (_) async {},
+      showLocationSettingsPrompt: (_) async {
+        promptCalls++;
+        return false;
+      },
+    );
+
+    expect(promptCalls, 1);
+    expect(gateway.admissionRequests, hasLength(1));
+  });
+
+  test('continues after cancelling the settings prompt like DC', () async {
+    final gateway = _Gateway(
+      admission: const ProductAdmissionData(
+        statusCode: 302,
+        message: '',
+        target: 'https://web.example.com/application',
+      ),
+    );
+    final targets = <String>[];
+    final flow = ProductApplicationFlow(
+      repository: gateway,
+      sessionStore: _session(authenticated: true),
+      permissions: PermissionCoordinator(
+        requestLocation: () async => PermissionStatus.permanentlyDenied,
+      ),
+    );
+
+    await flow.apply(
+      productId: 'product-1',
+      openLogin: (_) async => false,
+      openTarget: (target) async => targets.add(target),
+      openCreditReview: (_) async {},
+      openCertification: (step, productId) async {},
+      showLoading: () async {},
+      dismissLoading: () async {},
+      showMessage: (_) async {},
+      showLocationSettingsPrompt: (_) async => false,
+    );
+
+    expect(gateway.admissionRequests, ['product-1']);
+    expect(targets, ['https://web.example.com/application']);
+  });
+
   test(
     'loads product details and opens the server-selected certification',
     () async {

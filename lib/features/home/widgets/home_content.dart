@@ -12,12 +12,14 @@ class HomeContent extends StatelessWidget {
     required this.data,
     this.onRefresh,
     this.onApply,
+    this.onCustomerService,
     super.key,
   });
 
   final HomeData data;
   final Future<void> Function()? onRefresh;
   final ValueChanged<HomeCardData>? onApply;
+  final VoidCallback? onCustomerService;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class HomeContent extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const _HomeHeader(),
+          _HomeHeader(onCustomerService: onCustomerService),
           if (card != null)
             LoanHero(
               productName: card.productName,
@@ -230,7 +232,9 @@ class _PromoBannerImage extends StatelessWidget {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader();
+  const _HomeHeader({this.onCustomerService});
+
+  final VoidCallback? onCustomerService;
 
   @override
   Widget build(BuildContext context) {
@@ -262,14 +266,28 @@ class _HomeHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: context.r(18),
-            top: context.r(51),
-            child: Image.asset(
-              AppAssets.homeChatIcon,
-              key: const Key('home-chat-icon'),
-              width: context.r(20),
-              height: context.r(18),
-              fit: BoxFit.fill,
+            right: context.r(10),
+            top: context.r(43),
+            child: Semantics(
+              button: true,
+              label: 'Customer Service',
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: onCustomerService,
+                  borderRadius: BorderRadius.circular(context.r(8)),
+                  child: Padding(
+                    padding: EdgeInsets.all(context.r(8)),
+                    child: Image.asset(
+                      AppAssets.homeChatIcon,
+                      key: const Key('home-chat-icon'),
+                      width: context.r(20),
+                      height: context.r(18),
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
