@@ -162,6 +162,21 @@ class ApiClient {
     );
   }
 
+  Future<ApiResponse<Json>> fetchCertificationRetention({
+    required String type,
+    required String productId,
+  }) {
+    return post<Json>(
+      '/viler/soreness',
+      data: {
+        'bobberies': type.trim(),
+        'pesters': productId.trim(),
+        'brink': ApiSignature.randomDigits(6),
+      },
+      decode: Json.new,
+    );
+  }
+
   Future<ApiResponse<Json>> reportLocation({
     String? province,
     required String countryCode,
@@ -183,6 +198,38 @@ class ApiClient {
         'cherubic': city,
         'benzanthracene': ApiSignature.randomDigits(6),
         'pneumonitises': ApiSignature.randomDigits(6),
+      },
+      decode: (data) => Json(data),
+    );
+  }
+
+  Future<ApiResponse<Json>> fetchOrderList({
+    required String status,
+    String page = '1',
+    String pageSize = '50',
+  }) {
+    return post<Json>(
+      '/viler/pharmacognosy',
+      data: {'narthex': status, 'eclipser': page, 'immolates': pageSize},
+      decode: (data) => Json(data),
+    );
+  }
+
+  Future<ApiResponse<Json>> retryProgressOrder({required String orderNumber}) {
+    return post<Json>(
+      '/viler/clipsheet',
+      data: {'readjusts': orderNumber.trim()},
+      decode: (data) => Json(data),
+    );
+  }
+
+  Future<ApiResponse<Json>> fetchProgressAccounts({required String productId}) {
+    return post<Json>(
+      '/viler/ritualize',
+      data: {
+        'modernised': productId.trim(),
+        'occident': ApiSignature.randomDigits(6),
+        'sloe': ApiSignature.randomDigits(6),
       },
       decode: (data) => Json(data),
     );

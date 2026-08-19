@@ -1,7 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/features/home/data/home_data.dart';
+
+const _creditProgressDesignWidth = 343.0;
+const _creditProgressDesignHeight = 137.0;
+
+double _creditProgressWidth(BuildContext context) =>
+    math.max(0.0, MediaQuery.sizeOf(context).width - context.r(32));
+
+double _creditProgressHeight(BuildContext context) =>
+    _creditProgressWidth(context) /
+    _creditProgressDesignWidth *
+    _creditProgressDesignHeight;
 
 class LoanHero extends StatelessWidget {
   const LoanHero({
@@ -15,6 +29,8 @@ class LoanHero extends StatelessWidget {
     required this.interestRateLabel,
     required this.description,
     required this.actionText,
+    this.certificationProgress = const [],
+    this.loanTermRows = const [],
     this.onApply,
     super.key,
   });
@@ -29,6 +45,8 @@ class LoanHero extends StatelessWidget {
   final String interestRateLabel;
   final String description;
   final String actionText;
+  final List<HomeCardProgressItem> certificationProgress;
+  final List<HomeCardLoanTermRow> loanTermRows;
   final VoidCallback? onApply;
 
   @override
@@ -41,7 +59,9 @@ class LoanHero extends StatelessWidget {
         child: Container(
           key: const Key('home-loan-hero'),
           width: context.r(375),
-          height: context.r(383),
+          height: certificationProgress.isEmpty
+              ? context.r(383)
+              : context.r(383 + 39) + _creditProgressHeight(context),
           decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage(AppAssets.homeLoanHero),
@@ -66,20 +86,25 @@ class LoanHero extends StatelessWidget {
               SizedBox(height: context.r(30)),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: context.r(52)),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _LoanStat(label: loanTermLabel, value: loanTerm),
-                    ),
-                    SizedBox(width: context.r(35)),
-                    Expanded(
-                      child: _LoanStat(
-                        label: interestRateLabel,
-                        value: interestRate,
-                      ),
-                    ),
-                  ],
-                ),
+                child: loanTermRows.isEmpty
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: _LoanStat(
+                              label: loanTermLabel,
+                              value: loanTerm,
+                            ),
+                          ),
+                          SizedBox(width: context.r(35)),
+                          Expanded(
+                            child: _LoanStat(
+                              label: interestRateLabel,
+                              value: interestRate,
+                            ),
+                          ),
+                        ],
+                      )
+                    : _LoanTermStats(rows: loanTermRows),
               ),
               SizedBox(height: context.r(28)),
               Padding(
@@ -103,10 +128,225 @@ class LoanHero extends StatelessWidget {
               ),
               SizedBox(height: context.r(12)),
               _ApplyButton(text: actionText),
+              if (certificationProgress.isNotEmpty) ...[
+                SizedBox(height: context.r(39)),
+                _CreditActivationProgress(items: certificationProgress),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CreditActivationProgress extends StatelessWidget {
+  const _CreditActivationProgress({required this.items});
+
+  final List<HomeCardProgressItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = _creditProgressWidth(context);
+    final scale = width / _creditProgressDesignWidth;
+    double metric(double value) => value * scale;
+    final contentWidth = width - metric(48);
+    final itemCount = items.length;
+    final minimumGap = metric(4);
+    final tileWidth = math.min(
+      metric(46),
+      (contentWidth - minimumGap * (itemCount - 1)) / itemCount,
+    );
+    final gapWidth = itemCount == 1
+        ? 0.0
+        : (contentWidth - tileWidth * itemCount) / (itemCount - 1);
+    final activeCount = items.where((item) => item.selected > 0).length;
+
+    return SizedBox(
+      key: const Key('home-credit-activation-progress'),
+      width: width,
+      height: _creditProgressHeight(context),
+      child: DecoratedBox(
+        key: const Key('home-credit-activation-progress-background'),
+        decoration: const BoxDecoration(
+          color: AppColors.homeCreditProgressPanel,
+          image: DecorationImage(
+            image: AssetImage(AppAssets.homeCreditActivationProgress),
+            fit: BoxFit.fill,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            metric(24),
+            metric(62),
+            metric(24),
+            metric(24),
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                height: metric(34),
+                child: Row(
+                  mainAxisAlignment: itemCount == 1
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+                  children: [
+                    for (var index = 0; index < itemCount; index++) ...[
+                      _CreditProgressTile(
+                        item: items[index],
+                        width: tileWidth,
+                        index: index,
+                        scale: scale,
+                      ),
+                      if (index < itemCount - 1) SizedBox(width: gapWidth),
+                    ],
+                  ],
+                ),
+              ),
+              SizedBox(height: metric(8)),
+              _CreditProgressTrack(
+                activeFraction: activeCount / itemCount,
+                scale: scale,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CreditProgressTile extends StatelessWidget {
+  const _CreditProgressTile({
+    required this.item,
+    required this.width,
+    required this.index,
+    required this.scale,
+  });
+
+  final HomeCardProgressItem item;
+  final double width;
+  final int index;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = item.selected > 0;
+    return Container(
+      key: Key(
+        'home-credit-activation-step-${active ? 'active' : 'inactive'}-$index',
+      ),
+      width: width,
+      height: 34 * scale,
+      padding: EdgeInsets.symmetric(horizontal: 7 * scale, vertical: 4 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.homeCreditProgressTile,
+        borderRadius: BorderRadius.circular(4 * scale),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 12 * scale,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                item.amount,
+                maxLines: 1,
+                style: TextStyle(
+                  color: AppColors.homeCreditProgressAmount,
+                  fontSize: 10 * scale,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                  height: 12 / 10,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 4 * scale),
+          Expanded(
+            child: Text(
+              item.title,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.homeCreditProgressLabel,
+                fontSize: 8 * scale,
+                height: 10 / 8,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CreditProgressTrack extends StatelessWidget {
+  const _CreditProgressTrack({
+    required this.activeFraction,
+    required this.scale,
+  });
+
+  final double activeFraction;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4 * scale),
+      child: SizedBox(
+        key: const Key('home-credit-activation-track'),
+        width: double.infinity,
+        height: 8 * scale,
+        child: Stack(
+          children: [
+            const Positioned.fill(
+              child: ColoredBox(color: AppColors.homeCreditProgressTrack),
+            ),
+            if (activeFraction > 0)
+              FractionallySizedBox(
+                widthFactor: activeFraction,
+                child: const ColoredBox(
+                  color: AppColors.homeCreditProgressActive,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoanTermStats extends StatelessWidget {
+  const _LoanTermStats({required this.rows});
+
+  final List<HomeCardLoanTermRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleRows = rows.length > 1 ? [rows.first, rows.last] : rows;
+    return Row(
+      key: const Key('home-loan-term-rows'),
+      children: [
+        for (var index = 0; index < visibleRows.length; index++) ...[
+          if (index > 0) ...[
+            SizedBox(width: context.r(35)),
+            Container(
+              width: context.r(1),
+              height: context.r(26),
+              color: AppColors.homeTermDivider,
+            ),
+            SizedBox(width: context.r(35)),
+          ],
+          Expanded(
+            child: _LoanStat(
+              label: '${visibleRows[index].period} ${visibleRows[index].label}'
+                  .trim(),
+              value: visibleRows[index].interestRate,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

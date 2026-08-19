@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/features/progress/order_list_models.dart';
 
 class OrderStatusCard extends StatelessWidget {
-  const OrderStatusCard({super.key});
+  const OrderStatusCard({super.key, this.onStatusTap});
+
+  final ValueChanged<OrderListStatus>? onStatusTap;
 
   @override
   Widget build(BuildContext context) {
     const statuses = [
-      _OrderStatus(asset: AppAssets.mineOrderAll, label: 'View All'),
-      _OrderStatus(asset: AppAssets.mineOrderUnpaid, label: 'Unpaid'),
-      _OrderStatus(asset: AppAssets.mineOrderLate, label: 'Late'),
-      _OrderStatus(asset: AppAssets.mineOrderPaid, label: 'Paid'),
+      (status: OrderListStatus.all, asset: AppAssets.mineOrderAll),
+      (status: OrderListStatus.unpaid, asset: AppAssets.mineOrderUnpaid),
+      (status: OrderListStatus.late, asset: AppAssets.mineOrderLate),
+      (status: OrderListStatus.paid, asset: AppAssets.mineOrderPaid),
     ];
 
     return Container(
@@ -21,7 +24,7 @@ class OrderStatusCard extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
         context.r(18),
         context.r(18),
-        context.r(26),
+        context.r(18),
         context.r(16),
       ),
       decoration: BoxDecoration(
@@ -41,13 +44,13 @@ class OrderStatusCard extends StatelessWidget {
               (status) => Expanded(
                 child: Semantics(
                   button: true,
-                  label: '${status.label} orders',
+                  label: '${status.status.label} orders',
                   child: InkWell(
                     key: Key(
-                      'mine-order-${status.label.toLowerCase().replaceAll(' ', '-')}',
+                      'mine-order-${status.status.label.toLowerCase().replaceAll(' ', '-')}',
                     ),
                     borderRadius: BorderRadius.circular(context.r(8)),
-                    onTap: () {},
+                    onTap: () => onStatusTap?.call(status.status),
                     child: LayoutBuilder(
                       builder: (context, _) => FittedBox(
                         fit: BoxFit.scaleDown,
@@ -63,7 +66,7 @@ class OrderStatusCard extends StatelessWidget {
                               ),
                               SizedBox(height: context.r(8)),
                               Text(
-                                status.label,
+                                status.status.label,
                                 style: TextStyle(
                                   color: AppColors.textPrimary,
                                   fontSize: context.r(12),
@@ -83,11 +86,4 @@ class OrderStatusCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _OrderStatus {
-  const _OrderStatus({required this.asset, required this.label});
-
-  final String asset;
-  final String label;
 }

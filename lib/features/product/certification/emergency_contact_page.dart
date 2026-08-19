@@ -13,6 +13,7 @@ import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_retention_guard.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_progress.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_single_select_panel.dart';
 import 'package:fund_nexus/features/product/certification/widgets/personal_information_form.dart';
@@ -73,81 +74,94 @@ class _EmergencyContactPageState extends State<EmergencyContactPage> {
   Widget build(BuildContext context) {
     final busy =
         _loadState == _EmergencyContactLoadState.loading || _submitting;
-    return Scaffold(
-      backgroundColor: AppColors.homeBackground,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              AppAssets.identityUploadBackground,
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
+    final onBack = CertificationRetentionGuard.backHandler(
+      context: context,
+      type: '4',
+      productId: widget.productId,
+      onDefaultBack: () => Navigator.of(context).maybePop(),
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !busy) onBack();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.homeBackground,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                AppAssets.identityUploadBackground,
+                fit: BoxFit.fitWidth,
+                alignment: Alignment.topCenter,
+              ),
             ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: GestureDetector(
-              key: const Key('emergencyContactDismissKeyboard'),
-              behavior: HitTestBehavior.translucent,
-              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: context.r(92)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CertificationPageHeader(
-                      title: 'Urgent contact person',
-                      onBack: () => Navigator.of(context).maybePop(),
-                      backButtonKey: const Key('emergencyContactBack'),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        context.r(16),
-                        context.r(23),
-                        context.r(172),
-                        0,
+            SafeArea(
+              bottom: false,
+              child: GestureDetector(
+                key: const Key('emergencyContactDismissKeyboard'),
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: context.r(92)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CertificationPageHeader(
+                        title: 'Urgent contact person',
+                        onBack: onBack,
+                        backButtonKey: const Key('emergencyContactBack'),
                       ),
-                      child: CertificationGuidance(
-                        key: const Key('emergencyContactGuidance'),
-                        text: _prompt.isEmpty ? _defaultPrompt : _prompt,
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          context.r(16),
+                          context.r(23),
+                          context.r(172),
+                          0,
+                        ),
+                        child: CertificationGuidance(
+                          key: const Key('emergencyContactGuidance'),
+                          text: _prompt.isEmpty ? _defaultPrompt : _prompt,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: context.r(22)),
-                    Center(
-                      child: CertificationProgress(
-                        key: const Key('emergencyContactProgress'),
-                        currentStep: 4,
+                      SizedBox(height: context.r(22)),
+                      Center(
+                        child: CertificationProgress(
+                          key: const Key('emergencyContactProgress'),
+                          currentStep: 4,
+                        ),
                       ),
-                    ),
-                    Transform.translate(
-                      offset: Offset(0, -context.r(27)),
-                      child: _buildContent(context),
-                    ),
-                  ],
+                      Transform.translate(
+                        offset: Offset(0, -context.r(27)),
+                        child: _buildContent(context),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          if (busy)
-            const Positioned.fill(
-              child: ModalBarrier(
-                dismissible: false,
-                color: Colors.transparent,
+            if (busy)
+              const Positioned.fill(
+                child: ModalBarrier(
+                  dismissible: false,
+                  color: Colors.transparent,
+                ),
               ),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              context.r(16),
+              context.r(14),
+              context.r(16),
+              context.r(14),
             ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            context.r(16),
-            context.r(14),
-            context.r(16),
-            context.r(14),
-          ),
-          child: PersonalInformationSubmitButton(
-            enabled: _loadState == _EmergencyContactLoadState.content && !busy,
-            onPressed: _submit,
+            child: PersonalInformationSubmitButton(
+              enabled:
+                  _loadState == _EmergencyContactLoadState.content && !busy,
+              onPressed: _submit,
+            ),
           ),
         ),
       ),

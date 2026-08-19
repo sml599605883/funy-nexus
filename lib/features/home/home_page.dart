@@ -44,6 +44,8 @@ class HomePage extends StatelessWidget {
             data: data,
             onRefresh: context.read<HomeCubit>().load,
             onApply: (card) => _apply(context, card),
+            onApplyRecommendation: (item) =>
+                _applyProduct(context, item.productId),
             onCustomerService: () => _openCustomerService(context),
           );
         }
@@ -55,6 +57,8 @@ class HomePage extends StatelessWidget {
                   data: previousData,
                   onRefresh: context.read<HomeCubit>().load,
                   onApply: (card) => _apply(context, card),
+                  onApplyRecommendation: (item) =>
+                      _applyProduct(context, item.productId),
                   onCustomerService: () => _openCustomerService(context),
                 ),
                 Positioned(
@@ -70,6 +74,8 @@ class HomePage extends StatelessWidget {
             data: previousData,
             onRefresh: context.read<HomeCubit>().load,
             onApply: (card) => _apply(context, card),
+            onApplyRecommendation: (item) =>
+                _applyProduct(context, item.productId),
             onCustomerService: () => _openCustomerService(context),
           );
         }
@@ -90,9 +96,12 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Future<void> _apply(BuildContext context, HomeCardData card) {
+  Future<void> _apply(BuildContext context, HomeCardData card) =>
+      _applyProduct(context, card.productId);
+
+  Future<void> _applyProduct(BuildContext context, String productId) {
     return context.read<ProductApplicationFlow>().apply(
-      productId: card.productId,
+      productId: productId,
       openLogin: (productId) async {
         if (!context.mounted) return false;
         final riskStartedAtSeconds = ReportService.nowSeconds();
@@ -115,7 +124,7 @@ class HomePage extends StatelessWidget {
         if (!context.mounted) return;
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
-            builder: (_) => CreditReviewPage(productId: card.productId),
+            builder: (_) => CreditReviewPage(productId: productId),
           ),
         );
       },
@@ -129,7 +138,9 @@ class HomePage extends StatelessWidget {
         );
       },
       showLoading: () => EasyLoading.show(status: 'Loading...'),
-      dismissLoading: EasyLoading.dismiss,
+      // Admission navigation should start in the same frame the request ends;
+      // waiting for EasyLoading's exit animation creates a visible blank gap.
+      dismissLoading: () => EasyLoading.dismiss(animation: false),
       showMessage: (message) => _showMessage(context, message),
       showLocationSettingsPrompt: (message) =>
           _showLocationSettingsPrompt(context, message),

@@ -66,6 +66,71 @@ void main() {
     expect(capturedRequest.queryParameters['hoods'], hasLength(64));
   });
 
+  test('posts the documented Fund Nexus order-list contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse(const {'semihobos': <dynamic>[]});
+    });
+    addTearDown(client.close);
+
+    final response = await client.fetchOrderList(status: '6');
+
+    expect(response.data['semihobos'].listValue, isEmpty);
+    expect(capturedRequest.path, endsWith('/viler/pharmacognosy'));
+    expect(capturedRequest.data, {
+      'narthex': '6',
+      'eclipser': '1',
+      'immolates': '50',
+    });
+  });
+
+  test('posts the documented progress retry contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse(const {
+        'topical': 'https://web.example.com/retry',
+      });
+    });
+    addTearDown(client.close);
+
+    final response = await client.retryProgressOrder(
+      orderNumber: ' ORDER-1 ',
+    );
+
+    expect(capturedRequest.method, 'POST');
+    expect(capturedRequest.path, '/viler/clipsheet');
+    expect(capturedRequest.data, {'readjusts': 'ORDER-1'});
+    expect(response.data['topical'].stringValue, 'https://web.example.com/retry');
+  });
+
+  test('posts the documented progress account-list contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse(const {
+        'semihobos': [
+          {'hoover': '5326'},
+        ],
+      });
+    });
+    addTearDown(client.close);
+
+    final response = await client.fetchProgressAccounts(
+      productId: ' product-1 ',
+    );
+
+    expect(capturedRequest.method, 'POST');
+    expect(capturedRequest.path, '/viler/ritualize');
+    expect(capturedRequest.data, {
+      'modernised': 'product-1',
+      'occident': hasLength(6),
+      'sloe': hasLength(6),
+    });
+    expect(response.data['semihobos'].listValue, hasLength(1));
+  });
+
   test(
     'parses the documented device-name response code as an integer',
     () async {
@@ -248,6 +313,38 @@ void main() {
       });
     },
   );
+
+  test('uses the documented certification retention popup contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse({
+        'leapt': {
+          'redepositing': 'https://image.example.com/retention.png',
+          'scall': 'Continue',
+          'slipperinesses': 'Exit',
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final response = await client.fetchCertificationRetention(
+      type: ' 2 ',
+      productId: ' product-1 ',
+    );
+
+    expect(capturedRequest.method, 'POST');
+    expect(capturedRequest.path, '/viler/soreness');
+    expect(capturedRequest.data, {
+      'bobberies': '2',
+      'pesters': 'product-1',
+      'brink': hasLength(6),
+    });
+    expect(
+      Json(response.data)['leapt']['redepositing'].stringValue,
+      'https://image.example.com/retention.png',
+    );
+  });
 
   test(
     'uses the documented Fund Nexus personal-information contracts',

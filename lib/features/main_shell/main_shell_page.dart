@@ -102,7 +102,7 @@ class _MainShellPageState extends State<MainShellPage>
   @override
   void didPopNext() {
     _routeVisible = true;
-    _refreshHomeIfVisible();
+    _refreshVisibleTab();
   }
 
   @override
@@ -118,7 +118,7 @@ class _MainShellPageState extends State<MainShellPage>
     _wasInBackground = false;
     if (!resumedFromBackground) return;
     unawaited(widget.reportService?.resumed());
-    _refreshHomeIfVisible();
+    _refreshVisibleTab();
   }
 
   @override
@@ -183,7 +183,7 @@ class _MainShellPageState extends State<MainShellPage>
     }
 
     tabs.selectTab(index);
-    if (index == 0) {
+    if (index == 0 || index == 1) {
       await context.read<HomeCubit>().load();
     } else if (index == 2) {
       await context.read<SessionStore>().refreshPhone();
@@ -207,11 +207,14 @@ class _MainShellPageState extends State<MainShellPage>
     }
   }
 
-  void _refreshHomeIfVisible() {
-    if (!mounted || !_routeVisible || context.read<MainTabCubit>().state != 0) {
+  void _refreshVisibleTab() {
+    if (!mounted || !_routeVisible) {
       return;
     }
-    unawaited(context.read<HomeCubit>().load());
+    final selectedTab = context.read<MainTabCubit>().state;
+    if (selectedTab == 0 || selectedTab == 1) {
+      unawaited(context.read<HomeCubit>().load());
+    }
   }
 
   Widget _buildLoginPage(BuildContext context) {

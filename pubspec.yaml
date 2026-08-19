@@ -75,8 +75,9 @@ flutter:
 
   assets:
     - assets/
+    - assets/home_credit_activation_progress.png
     - assets/address_picker/
-    - assets/bind_card/
+    - assets/progress/
     - assets/tabbar/
 
   # To add assets to your application, add an assets section, like this:

@@ -13,6 +13,8 @@ import 'package:fund_nexus/features/mine/widgets/account_retention_dialog.dart';
 import 'package:fund_nexus/features/mine/widgets/mine_body.dart';
 import 'package:fund_nexus/features/mine/widgets/mine_header.dart';
 import 'package:fund_nexus/features/mine/widgets/order_status_card.dart';
+import 'package:fund_nexus/features/progress/order_list_models.dart';
+import 'package:fund_nexus/features/progress/order_list_page.dart';
 
 typedef AccountExitHandler = Future<bool> Function(AccountExitAction action);
 typedef AccountExitSuccessHandler = Future<void> Function();
@@ -48,25 +50,36 @@ class MinePage extends StatelessWidget {
           colors: [AppColors.homeHeaderStart, AppColors.homeHeaderEnd],
         ),
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Column(
         children: [
-          MineHeader(phone: displayPhone),
-          Positioned(
-            top: context.r(203),
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: MineBody(
-              onAccountTap: () => _showAccountPanel(context),
-              onCustomerService: onCustomerService,
-            ),
+          SizedBox(
+            height: context.r(184),
+            child: MineHeader(phone: displayPhone),
           ),
-          Positioned(
-            top: context.r(184),
-            left: context.r(16),
-            right: context.r(16),
-            child: const OrderStatusCard(),
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  top: context.r(19),
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: MineBody(
+                    onAccountTap: () => _showAccountPanel(context),
+                    onCustomerService: onCustomerService,
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: context.r(16),
+                  right: context.r(16),
+                  child: OrderStatusCard(
+                    onStatusTap: (status) => _openOrderList(context, status),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -91,6 +104,17 @@ class MinePage extends StatelessWidget {
       builder: (_) => AccountRetentionDialog(
         action: action,
         onConfirm: () => _handleAccountExit(context, action),
+      ),
+    );
+  }
+
+  Future<void> _openOrderList(
+    BuildContext context,
+    OrderListStatus status,
+  ) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => OrderListPage(initialStatus: status),
       ),
     );
   }

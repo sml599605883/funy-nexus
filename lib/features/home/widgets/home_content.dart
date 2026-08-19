@@ -6,12 +6,14 @@ import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/widgets/loan_hero.dart';
+import 'package:fund_nexus/features/home/widgets/recommendation_section.dart';
 
 class HomeContent extends StatelessWidget {
   const HomeContent({
     required this.data,
     this.onRefresh,
     this.onApply,
+    this.onApplyRecommendation,
     this.onCustomerService,
     super.key,
   });
@@ -19,46 +21,66 @@ class HomeContent extends StatelessWidget {
   final HomeData data;
   final Future<void> Function()? onRefresh;
   final ValueChanged<HomeCardData>? onApply;
+  final ValueChanged<HomeRecommendationData>? onApplyRecommendation;
   final VoidCallback? onCustomerService;
 
   @override
   Widget build(BuildContext context) {
     final card = data.primaryCard;
-    final scrollView = SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: ClampingScrollPhysics(),
-      ),
-      child: Column(
-        children: [
-          _HomeHeader(onCustomerService: onCustomerService),
-          if (card != null)
-            LoanHero(
-              productName: card.productName,
-              productLogo: card.productLogo,
-              amount: card.amount,
-              amountLabel: card.amountLabel,
-              loanTerm: card.loanTerm,
-              loanTermLabel: card.loanTermLabel,
-              interestRate: card.interestRate,
-              interestRateLabel: card.interestRateLabel,
-              description: card.description,
-              actionText: card.actionText,
-              onApply: () => onApply?.call(card),
-            ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.r(16)),
-            child: _PromoBanner(banners: data.promoBanners),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scrollView = SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: ClampingScrollPhysics(),
           ),
-          SizedBox(height: context.r(133)),
-        ],
-      ),
-    );
+          child: ConstrainedBox(
+            key: const Key('home-scroll-content'),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              children: [
+                _HomeHeader(onCustomerService: onCustomerService),
+                if (card != null)
+                  LoanHero(
+                    productName: card.productName,
+                    productLogo: card.productLogo,
+                    amount: card.amount,
+                    amountLabel: card.amountLabel,
+                    loanTerm: card.loanTerm,
+                    loanTermLabel: card.loanTermLabel,
+                    interestRate: card.interestRate,
+                    interestRateLabel: card.interestRateLabel,
+                    description: card.description,
+                    actionText: card.actionText,
+                    certificationProgress: card.certificationProgress,
+                    loanTermRows: card.loanTermRows,
+                    onApply: () => onApply?.call(card),
+                  ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: context.r(16)),
+                  child: _PromoBanner(banners: data.promoBanners),
+                ),
+                if (data.recommendations.isNotEmpty) ...[
+                  SizedBox(height: context.r(16)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: context.r(16)),
+                    child: RecommendationSection(
+                      items: data.recommendations,
+                      onApply: onApplyRecommendation,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
 
-    return ColoredBox(
-      color: AppColors.homeBackground,
-      child: onRefresh == null
-          ? scrollView
-          : RefreshIndicator(onRefresh: onRefresh!, child: scrollView),
+        return ColoredBox(
+          color: AppColors.homeBackground,
+          child: onRefresh == null
+              ? scrollView
+              : RefreshIndicator(onRefresh: onRefresh!, child: scrollView),
+        );
+      },
     );
   }
 }

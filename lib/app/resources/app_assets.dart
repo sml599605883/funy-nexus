@@ -5,6 +5,9 @@ abstract final class AppAssets {
   static const loginLogo = 'assets/login_logo.png';
 
   static const homeLoanHero = 'assets/home_loan_hero.png';
+  static const homeCreditActivationProgress =
+      'assets/home_credit_activation_progress.png';
+  static const progressEmpty = 'assets/progress/progress_empty.png';
   static const homeChatIcon = 'assets/chat_icon.png';
   static const homePromoBanner = 'assets/home_promo_banner.png';
 
@@ -20,10 +23,6 @@ abstract final class AppAssets {
   static const emergencyContactPicker = 'assets/emergency_contact_picker.png';
   static const identityUploadExamples = 'assets/identity_upload_examples.png';
   static const identityFaceExamples = 'assets/identity_face_examples.png';
-  static const bindCardBackground = 'assets/bind_card/background.png';
-  static const bindCardProgressBackground =
-      'assets/bind_card/progress_background.png';
-  static const bindCardFieldChevron = 'assets/bind_card/field_chevron.png';
   static const addressPickerClose =
       'assets/address_picker/address_picker_close.png';
   static const addressPickerChevron =

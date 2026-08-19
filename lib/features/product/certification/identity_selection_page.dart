@@ -9,6 +9,7 @@ import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_page.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_retention_guard.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 
@@ -53,32 +54,45 @@ class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
   @override
   Widget build(BuildContext context) {
     final data = _identityData;
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            AppAssets.identityVerificationBackground,
-            fit: BoxFit.cover,
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                _IdentityHeader(onBack: () => Navigator.of(context).maybePop()),
-                SizedBox(height: context.r(110)),
-                Expanded(
-                  child: _IdentityBody(
-                    data: data,
-                    error: _error,
-                    onRetry: _loadIdentityOptions,
-                    productId: widget.productId,
-                    scene2StartTimeSeconds: _scene2StartTimeSeconds,
-                  ),
-                ),
-              ],
+    final busy = data == null && _error == null;
+    final onBack = CertificationRetentionGuard.backHandler(
+      context: context,
+      type: '0',
+      productId: widget.productId,
+      onDefaultBack: () => Navigator.of(context).maybePop(),
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !busy) onBack();
+      },
+      child: Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              AppAssets.identityVerificationBackground,
+              fit: BoxFit.cover,
             ),
-          ),
-        ],
+            SafeArea(
+              child: Column(
+                children: [
+                  _IdentityHeader(onBack: busy ? () {} : onBack),
+                  SizedBox(height: context.r(110)),
+                  Expanded(
+                    child: _IdentityBody(
+                      data: data,
+                      error: _error,
+                      onRetry: _loadIdentityOptions,
+                      productId: widget.productId,
+                      scene2StartTimeSeconds: _scene2StartTimeSeconds,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

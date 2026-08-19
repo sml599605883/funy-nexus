@@ -40,13 +40,13 @@ void main() {
     await tester.tap(find.byKey(const Key('tab-progress')));
     await tester.pump();
 
-    expect(find.text('Progress'), findsOneWidget);
+    expect(find.text('progress'), findsNWidgets(2));
     expect(find.byType(IndexedStack), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('tab-home')));
     await tester.pumpAndSettle();
-    expect(homeRequestCount, 2);
+    expect(homeRequestCount, 3);
 
     await tester.tap(find.byKey(const Key('tab-mine')));
     await tester.pump();
@@ -196,7 +196,7 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(homeRequestCount, 2);
+    expect(homeRequestCount, 4);
   });
 }
 

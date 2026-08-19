@@ -106,9 +106,6 @@ class ProductRepository
     final response = await apiClient.post<ProductAdmissionData>(
       '/viler/pelvis',
       data: {
-        'metageneses': '1001',
-        'servitude': '1000',
-        'explantation': '1000',
         'modernised': productId,
         'nonpermissive': '0',
         'disaggregate': ApiSignature.randomDigits(6),

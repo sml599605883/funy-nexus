@@ -50,7 +50,7 @@ class _CreditReviewPageState extends State<CreditReviewPage> {
           openCreditReview: _resumeReview,
           openCertification: _openCertification,
           showLoading: () => EasyLoading.show(status: 'Loading...'),
-          dismissLoading: EasyLoading.dismiss,
+          dismissLoading: () => EasyLoading.dismiss(animation: false),
           showMessage: _showMessage,
         );
         return;

@@ -15,6 +15,7 @@ import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_retention_guard.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -59,65 +60,80 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
     final guidance = widget.promptMessage.trim().isEmpty
         ? FaceVerificationPage.defaultPromptMessage
         : widget.promptMessage.trim();
-    return Scaffold(
-      extendBody: true,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(AppAssets.identityUploadBackground, fit: BoxFit.cover),
-          SafeArea(
-            child: Column(
-              children: [
-                CertificationPageHeader(
-                  title: 'Face verification',
-                  onBack: () => Navigator.of(context).maybePop(),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.only(bottom: context.r(16)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: context.r(16),
-                            top: context.r(32),
+    final onBack = CertificationRetentionGuard.backHandler(
+      context: context,
+      type: '1',
+      productId: widget.productId,
+      onDefaultBack: () => Navigator.of(context).maybePop(),
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_isSubmitting) onBack();
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(AppAssets.identityUploadBackground, fit: BoxFit.cover),
+            SafeArea(
+              child: Column(
+                children: [
+                  CertificationPageHeader(
+                    title: 'Face verification',
+                    onBack: onBack,
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(bottom: context.r(16)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: context.r(16),
+                              top: context.r(32),
+                            ),
+                            child: CertificationGuidance(
+                              key: const Key('faceVerificationGuidance'),
+                              width: 187,
+                              text: guidance,
+                            ),
                           ),
-                          child: CertificationGuidance(
-                            key: const Key('faceVerificationGuidance'),
-                            width: 187,
-                            text: guidance,
+                          SizedBox(height: context.r(34)),
+                          Center(
+                            child: Image.asset(
+                              AppAssets.identityFaceExamples,
+                              key: const Key('faceVerificationExamples'),
+                              width: context.r(343),
+                              height: context.r(404),
+                              fit: BoxFit.fill,
+                              semanticLabel: 'Face verification examples',
+                            ),
                           ),
-                        ),
-                        SizedBox(height: context.r(34)),
-                        Center(
-                          child: Image.asset(
-                            AppAssets.identityFaceExamples,
-                            key: const Key('faceVerificationExamples'),
-                            width: context.r(343),
-                            height: context.r(404),
-                            fit: BoxFit.fill,
-                            semanticLabel: 'Face verification examples',
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              context.r(16),
+              0,
+              context.r(16),
+              context.r(22),
+            ),
+            child: _FaceSubmitButton(
+              enabled: !_isSubmitting,
+              onPressed: _submit,
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            context.r(16),
-            0,
-            context.r(16),
-            context.r(22),
-          ),
-          child: _FaceSubmitButton(enabled: !_isSubmitting, onPressed: _submit),
         ),
       ),
     );

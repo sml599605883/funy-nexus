@@ -22,9 +22,52 @@ abstract final class AppColors {
   static const homeAmount = Color.fromRGBO(234, 177, 60, 1);
   static const homeValue = Color.fromRGBO(38, 110, 86, 1);
   static const homeCaption = Color.fromRGBO(68, 93, 80, 1);
+  static const homeTermDivider = Color.fromRGBO(194, 222, 212, 1);
+  static const homeCreditProgressPanel = Color.fromRGBO(254, 226, 204, 1);
+  static const homeCreditProgressTile = Color.fromRGBO(255, 255, 255, 1);
+  static const homeCreditProgressAmount = Color.fromRGBO(51, 51, 51, 1);
+  static const homeCreditProgressLabel = Color.fromRGBO(102, 102, 102, 1);
+  static const homeCreditProgressTrack = Color.fromRGBO(208, 182, 162, 1);
+  static const homeCreditProgressActive = Color.fromRGBO(255, 133, 77, 1);
   static const homeApplyTrack = Color.fromRGBO(176, 242, 221, 1);
   static const homeApplyButtonStart = Color.fromRGBO(39, 212, 167, 1);
   static const homeApplyButtonEnd = Color.fromRGBO(53, 192, 145, 1);
+  static const homeRecommendationSurface = Color.fromRGBO(247, 252, 248, 1);
+  static const homeRecommendationShadow = Color.fromRGBO(174, 217, 203, 1);
+  static const homeRecommendationStripStart = Color.fromRGBO(207, 248, 234, 1);
+  static const homeRecommendationBadgeStart = Color.fromRGBO(253, 206, 72, 1);
+  static const homeRecommendationBadgeEnd = Color.fromRGBO(249, 186, 64, 1);
+  static const homeRecommendationDisabledStart = Color.fromRGBO(
+    150,
+    150,
+    150,
+    1,
+  );
+  static const homeRecommendationDisabledEnd = Color.fromRGBO(78, 78, 78, 1);
+  static const homeRecommendationAttentionStart = Color.fromRGBO(
+    212,
+    39,
+    39,
+    1,
+  );
+  static const homeRecommendationAttentionEnd = Color.fromRGBO(192, 53, 53, 1);
+  static const homeRecommendationMuted = Color.fromRGBO(153, 153, 153, 1);
+  static const progressBackgroundStart = Color.fromRGBO(228, 255, 246, 1);
+  static const progressBackgroundEnd = Color.fromRGBO(254, 251, 240, 1);
+  static const progressCardBorder = Color.fromRGBO(255, 221, 111, 1);
+  static const progressCardSurface = Color.fromRGBO(255, 252, 239, 1);
+  static const progressMetricSurface = Color.fromRGBO(234, 230, 216, 1);
+  static const progressMetricValue = Color.fromRGBO(86, 71, 21, 1);
+  static const progressMetricLabel = Color.fromRGBO(93, 82, 68, 1);
+  static const progressStatus = Color.fromRGBO(234, 70, 60, 1);
+  static const progressAction = Color.fromRGBO(255, 221, 111, 1);
+  static const orderActive = Color.fromRGBO(51, 195, 148, 1);
+  static const orderInactive = Color.fromRGBO(154, 154, 154, 1);
+  static const orderOverdue = Color.fromRGBO(234, 70, 60, 1);
+  static const orderProductText = Color.fromRGBO(60, 60, 60, 1);
+  static const orderMetricSurface = Color.fromRGBO(249, 249, 249, 1);
+  static const orderMetricLabel = Color.fromRGBO(102, 110, 117, 1);
+  static const orderMetricValue = Color.fromRGBO(32, 42, 52, 1);
   static const identitySectionSurface = Color.fromRGBO(255, 255, 255, 1);
   static const identitySectionGradientEnd = Color.fromRGBO(226, 255, 247, 1);
   static const identityTitle = Color.fromRGBO(51, 51, 51, 1);

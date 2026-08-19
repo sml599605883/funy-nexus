@@ -122,4 +122,75 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  test('parses Acidulations progress cards from the home response', () {
+    final data = HomeData.fromJson({
+      'semihobos': [
+        {
+          'etherifying': 'Acidulations',
+          'mycetozoan': [
+            {
+              'clipsheet': 'order-1',
+              'modernised': 7,
+              'briarwoods': 'PG Finance',
+              'nightside': 2,
+              'endurances': '₱20,000',
+              'bettor': 'Active Loan',
+              'suffocated': [
+                {
+                  'etherifying': 'change',
+                  'mammoth': 1,
+                  'exarchies': 'Change Account',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.progressItems, hasLength(1));
+    expect(data.progressItems.single.productId, '7');
+    expect(data.progressItems.single.amount, '₱20,000');
+    expect(data.progressItems.single.status, HomeProgressState.activeLoan);
+    expect(data.progressItems.single.actions.single.type, 'change');
+  });
+
+  test('parses Toolings recommendation cards from the home response', () {
+    final data = HomeData.fromJson({
+      'semihobos': [
+        {
+          'etherifying': 'Toolings',
+          'mycetozoan': [
+            {
+              'ecclesia': 12,
+              'ritualize': 'PG Finance',
+              'typographies': 'https://example.com/product.png',
+              'apparentness': '₱60,000',
+              'remediation': 'Available up to',
+              'wincer': ['Low interest rates', 'Ages 17 years and over'],
+              'soreness': 'Apply Now',
+              'vrow': -1,
+              'bodied': '≤ 0.5% Day',
+              'bravenesses': 'Interest rate',
+              'pharmacognosy': '180 Days',
+              'jordan': 'Loan terms',
+            },
+          ],
+        },
+      ],
+    });
+
+    final recommendation = data.recommendations.single;
+    expect(recommendation.productId, '12');
+    expect(recommendation.productName, 'PG Finance');
+    expect(recommendation.amount, '₱60,000');
+    expect(recommendation.highlights, [
+      'Low interest rates',
+      'Ages 17 years and over',
+    ]);
+    expect(recommendation.interestRate, '≤ 0.5% Day');
+    expect(recommendation.loanTerm, '180 Days');
+    expect(recommendation.buttonState, -1);
+  });
 }

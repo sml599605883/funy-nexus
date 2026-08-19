@@ -13,6 +13,7 @@ import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
 import 'package:fund_nexus/features/product/certification/personal_information_field_state.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_retention_guard.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_progress.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_salary_day_panel.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_single_select_panel.dart';
@@ -90,77 +91,89 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
         _loadState == _PersonalInformationLoadState.loading ||
         _submitting ||
         _addressLoadingKey != null;
-    return Scaffold(
-      backgroundColor: AppColors.homeBackground,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              AppAssets.identityUploadBackground,
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
+    final onBack = CertificationRetentionGuard.backHandler(
+      context: context,
+      type: _isWorkInformation ? '3' : '2',
+      productId: widget.productId,
+      onDefaultBack: () => Navigator.of(context).maybePop(),
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !busy) onBack();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.homeBackground,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                AppAssets.identityUploadBackground,
+                fit: BoxFit.fitWidth,
+                alignment: Alignment.topCenter,
+              ),
             ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: GestureDetector(
-              key: const Key('personalInformationDismissKeyboard'),
-              behavior: HitTestBehavior.translucent,
-              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: context.r(92)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CertificationPageHeader(
-                      title: _isWorkInformation
-                          ? 'Job information'
-                          : 'Basic identity information',
-                      onBack: () => Navigator.of(context).maybePop(),
-                      backButtonKey: Key('${_pageKey}Back'),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        context.r(16),
-                        context.r(24),
-                        context.r(172),
-                        0,
+            SafeArea(
+              bottom: false,
+              child: GestureDetector(
+                key: const Key('personalInformationDismissKeyboard'),
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: context.r(92)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CertificationPageHeader(
+                        title: _isWorkInformation
+                            ? 'Job information'
+                            : 'Basic identity information',
+                        onBack: onBack,
+                        backButtonKey: Key('${_pageKey}Back'),
                       ),
-                      child: CertificationGuidance(
-                        key: Key('${_pageKey}Guidance'),
-                        text: guidance,
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          context.r(16),
+                          context.r(24),
+                          context.r(172),
+                          0,
+                        ),
+                        child: CertificationGuidance(
+                          key: Key('${_pageKey}Guidance'),
+                          text: guidance,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: context.r(41)),
-                    Center(
-                      child: CertificationProgress(
-                        key: Key('${_pageKey}Progress'),
-                        currentStep: _isWorkInformation ? 2 : 1,
+                      SizedBox(height: context.r(41)),
+                      Center(
+                        child: CertificationProgress(
+                          key: Key('${_pageKey}Progress'),
+                          currentStep: _isWorkInformation ? 2 : 1,
+                        ),
                       ),
-                    ),
-                    Transform.translate(
-                      offset: Offset(0, -context.r(27)),
-                      child: _buildForm(context),
-                    ),
-                  ],
+                      Transform.translate(
+                        offset: Offset(0, -context.r(27)),
+                        child: _buildForm(context),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            context.r(16),
-            context.r(14),
-            context.r(16),
-            context.r(14),
-          ),
-          child: PersonalInformationSubmitButton(
-            enabled:
-                _loadState == _PersonalInformationLoadState.content && !busy,
-            onPressed: _submit,
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              context.r(16),
+              context.r(14),
+              context.r(16),
+              context.r(14),
+            ),
+            child: PersonalInformationSubmitButton(
+              enabled:
+                  _loadState == _PersonalInformationLoadState.content && !busy,
+              onPressed: _submit,
+            ),
           ),
         ),
       ),

@@ -5,6 +5,8 @@ class HomeData {
     this.banners = const [],
     this.banner,
     this.primaryCard,
+    this.progressItems = const [],
+    this.recommendations = const [],
   });
 
   final bool hasSections;
@@ -17,6 +19,8 @@ class HomeData {
   List<HomeBannerData> get promoBanners =>
       banners.isEmpty && banner != null ? [banner!] : banners;
   final HomeCardData? primaryCard;
+  final List<HomeProgressItem> progressItems;
+  final List<HomeRecommendationData> recommendations;
 
   bool get isEmpty => !hasSections;
 
@@ -32,6 +36,8 @@ class HomeData {
 
     List<HomeBannerData> banners = const [];
     HomeCardData? primaryCard;
+    final progressItems = <HomeProgressItem>[];
+    final recommendations = <HomeRecommendationData>[];
     for (final sectionValue in sectionsValue) {
       if (sectionValue is! Map) continue;
       final section = _stringKeyedMap(sectionValue);
@@ -48,6 +54,18 @@ class HomeData {
       if (primaryCard == null && _largeCardTypes.contains(type)) {
         primaryCard = HomeCardData.fromJson(items.first);
       }
+      if (_progressTypes.contains(type)) {
+        progressItems.addAll(
+          items.map(HomeProgressItem.fromJson).whereType<HomeProgressItem>(),
+        );
+      }
+      if (_productListTypes.contains(type)) {
+        recommendations.addAll(
+          items
+              .map(HomeRecommendationData.fromJson)
+              .whereType<HomeRecommendationData>(),
+        );
+      }
     }
 
     return HomeData(
@@ -56,11 +74,170 @@ class HomeData {
       banners: banners,
       banner: banners.isEmpty ? null : banners.first,
       primaryCard: primaryCard,
+      progressItems: List.unmodifiable(progressItems),
+      recommendations: List.unmodifiable(recommendations),
     );
   }
 
   static const _bannerTypes = {'BANNER', 'DonkeyCatch'};
   static const _largeCardTypes = {'LARGE_CARD', 'Majordomo'};
+  static const _progressTypes = {'PROCESS_LIST', 'Acidulations'};
+  static const _productListTypes = {'PRODUCT_LIST', 'Toolings'};
+}
+
+class HomeRecommendationData {
+  const HomeRecommendationData({
+    required this.productId,
+    required this.productName,
+    required this.productLogo,
+    required this.amount,
+    required this.amountLabel,
+    required this.interestRate,
+    required this.interestRateLabel,
+    required this.loanTerm,
+    required this.loanTermLabel,
+    required this.highlights,
+    required this.actionText,
+    required this.buttonState,
+  });
+
+  final String productId;
+  final String productName;
+  final String productLogo;
+  final String amount;
+  final String amountLabel;
+  final String interestRate;
+  final String interestRateLabel;
+  final String loanTerm;
+  final String loanTermLabel;
+  final List<String> highlights;
+  final String actionText;
+  final int buttonState;
+
+  static HomeRecommendationData? fromJson(Object? data) {
+    if (data is! Map) return null;
+    final json = _stringKeyedMap(data);
+    final productId = _stringValue(json['ecclesia']);
+    final productName = _stringValue(json['ritualize']);
+    if (productId.isEmpty && productName.isEmpty) return null;
+
+    return HomeRecommendationData(
+      productId: productId,
+      productName: productName,
+      productLogo: _stringValue(json['typographies']),
+      amount: _stringValue(json['apparentness']),
+      amountLabel: _stringValue(json['remediation']),
+      interestRate: _stringValue(json['bodied']),
+      interestRateLabel: _stringValue(json['bravenesses']),
+      loanTerm: _stringValue(json['pharmacognosy']),
+      loanTermLabel: _stringValue(json['jordan']),
+      highlights: List.unmodifiable(_stringList(json['wincer'])),
+      actionText: _stringValue(json['soreness']),
+      buttonState: _buttonState(json),
+    );
+  }
+}
+
+abstract final class HomeProgressState {
+  static const unknown = 0;
+  static const inReview = 1;
+  static const activeLoan = 2;
+  static const overdue = 3;
+  static const disbursing = 4;
+  static const disbursementFailed = 5;
+  static const disbursementFailedAlternative = 6;
+}
+
+class HomeProgressItem {
+  const HomeProgressItem({
+    required this.orderNumber,
+    required this.productId,
+    required this.productName,
+    required this.productLogo,
+    required this.title,
+    required this.amount,
+    required this.amountLabel,
+    required this.date,
+    required this.dateLabel,
+    required this.status,
+    required this.statusLabel,
+    required this.detailTarget,
+    required this.actions,
+  });
+
+  final String orderNumber;
+  final String productId;
+  final String productName;
+  final String productLogo;
+  final String title;
+  final String amount;
+  final String amountLabel;
+  final String date;
+  final String dateLabel;
+  final int status;
+  final String statusLabel;
+  final String detailTarget;
+  final List<HomeProgressAction> actions;
+
+  static HomeProgressItem? fromJson(Object? data) {
+    if (data is! Map) return null;
+    final json = _stringKeyedMap(data);
+    final productName = _stringValue(json['briarwoods']);
+    final orderNumber = _stringValue(json['clipsheet']);
+    if (productName.isEmpty && orderNumber.isEmpty) return null;
+
+    final formattedAmount = _stringValue(json['endurances']);
+    return HomeProgressItem(
+      orderNumber: orderNumber,
+      productId: _stringValue(json['modernised']),
+      productName: productName,
+      productLogo: _stringValue(json['soonest']),
+      title: _stringValue(json['culinarians']),
+      amount: formattedAmount.isEmpty
+          ? _stringValue(json['breaststrokers'])
+          : formattedAmount,
+      amountLabel: _stringValue(json['apodoses']),
+      date: _stringValue(json['psittacosis']),
+      dateLabel: _stringValue(json['callboys']),
+      status: _intValue(json['nightside']),
+      statusLabel: _stringValue(json['bettor']),
+      detailTarget: _stringValue(json['redepositing']),
+      actions: List.unmodifiable(
+        (json['suffocated'] is List ? json['suffocated'] as List : const [])
+            .map(HomeProgressAction.fromJson)
+            .whereType<HomeProgressAction>()
+            .where((action) => action.visible),
+      ),
+    );
+  }
+}
+
+class HomeProgressAction {
+  const HomeProgressAction({
+    required this.type,
+    required this.visible,
+    required this.label,
+    required this.badge,
+    required this.target,
+  });
+
+  final String type;
+  final bool visible;
+  final String label;
+  final String badge;
+  final String target;
+
+  static HomeProgressAction? fromJson(Object? data) {
+    if (data is! Map) return null;
+    final json = _stringKeyedMap(data);
+    return HomeProgressAction(
+      type: _stringValue(json['etherifying']),
+      visible: _intValue(json['mammoth']) == 1,
+      label: _stringValue(json['exarchies']),
+      badge: _stringValue(json['excludible']),
+      target: _stringValue(json['toyish']),
+    );
+  }
 }
 
 class HomeCustomerService {
@@ -239,4 +416,17 @@ String _stringValue(Object? value) => value?.toString().trim() ?? '';
 int _intValue(Object? value) {
   if (value is int) return value;
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+List<String> _stringList(Object? value) {
+  if (value is! List) return const [];
+  return value
+      .map(_stringValue)
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+int _buttonState(Map<String, Object?> json) {
+  final state = json['vrow'];
+  return state == null ? _intValue(json['suborganization']) : _intValue(state);
 }
