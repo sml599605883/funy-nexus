@@ -46,10 +46,10 @@ class ProductApplicationFlow {
 
     _requestInFlight = true;
     try {
-      if (!sessionStore.isAuthenticated && !await openLogin(normalizedId)) {
+      if (!sessionStore.isAuthenticated) {
+        await openLogin(normalizedId);
         return;
       }
-      if (!sessionStore.isAuthenticated) return;
 
       final locationDecision = await permissions.requestLocationAccess();
       if (locationDecision != LocationAccessDecision.granted) {

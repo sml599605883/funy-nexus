@@ -8,6 +8,8 @@ import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/main_shell/main_shell_page.dart';
 import 'package:fund_nexus/features/main_shell/state/main_tab_cubit.dart';
+import 'package:fund_nexus/core/json/json.dart';
+import 'package:fund_nexus/core/network/api_response.dart';
 
 void main() {
   testWidgets('starts on Home and exposes three tabs', (tester) async {
@@ -19,6 +21,59 @@ void main() {
     expect(find.byKey(const Key('tab-home')), findsOneWidget);
     expect(find.byKey(const Key('tab-progress')), findsOneWidget);
     expect(find.byKey(const Key('tab-mine')), findsOneWidget);
+  });
+
+  testWidgets('requests Home and Mine popups by scene and only logs them', (
+    tester,
+  ) async {
+    final scenes = <int>[];
+    await tester.pumpWidget(
+      _testShell(
+        authenticated: true,
+        popupLoader: (scene) async {
+          scenes.add(scene);
+          return ApiResponse<Json>(
+            code: '0',
+            message: 'success',
+            data: Json({'etherifying': 0}),
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(scenes, [1]);
+
+    await tester.tap(find.byKey(const Key('tab-mine')));
+    await tester.pumpAndSettle();
+    expect(scenes, [1, 2]);
+  });
+
+  testWidgets('pull-to-refresh requests the Home popup', (tester) async {
+    final scenes = <int>[];
+    await tester.pumpWidget(
+      _testShell(
+        authenticated: true,
+        popupLoader: (scene) async {
+          scenes.add(scene);
+          return ApiResponse<Json>(
+            code: '0',
+            message: 'success',
+            data: Json({'etherifying': 0}),
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(scenes, [1]);
+
+    final refresh = tester
+        .state<RefreshIndicatorState>(find.byType(RefreshIndicator))
+        .show();
+    await tester.pumpAndSettle();
+    await refresh;
+    await tester.pumpAndSettle();
+
+    expect(scenes, [1, 1]);
   });
 
   testWidgets('switches tabs while keeping all pages in the stack', (
@@ -204,6 +259,7 @@ Widget _testShell({
   required bool authenticated,
   MainTabCubit? tabs,
   HomeLoader? homeLoader,
+  PopupLoader? popupLoader,
   WidgetBuilder? loginPageBuilder,
   _TestSessionStore? session,
 }) {
@@ -222,7 +278,10 @@ Widget _testShell({
             )..load(),
           ),
         ],
-        child: MainShellPage(loginPageBuilder: loginPageBuilder),
+        child: MainShellPage(
+          loginPageBuilder: loginPageBuilder,
+          popupLoader: popupLoader,
+        ),
       ),
     ),
   );

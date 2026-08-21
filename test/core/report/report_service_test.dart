@@ -17,6 +17,57 @@ import 'package:fund_nexus/core/session/session_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test(
+    'requests notification authorization before APNs registration',
+    () async {
+      final calls = <String>[];
+      final notificationPermission = Completer<void>();
+      final sessionStore = SessionStore(_MemorySessionPersistence());
+      final client = _client(sessionStore, (_) => _successResponse());
+      final store = ReportStore.memory();
+      await store.markAppOpened();
+      addTearDown(client.close);
+
+      final channel = MethodChannel('test/notification_report_bridge');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls.add(call.method);
+            if (call.method == 'requestNotificationPermission') {
+              await notificationPermission.future;
+            }
+            if (call.method == 'getTrackingStatus') return 'authorized';
+            if (call.method == 'getDeviceSnapshot') return <String, Object?>{};
+            if (call.method == 'getPushToken') return '';
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+
+      final service = ReportService(
+        apiClient: client,
+        sessionStore: sessionStore,
+        apiCrypto: ApiCrypto(key: '0123456789abcdef', iv: 'abcdef9876543210'),
+        store: store,
+        native: ReportNativeBridge(channel: channel),
+      );
+
+      final started = service.start();
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, ['requestNotificationPermission']);
+
+      notificationPermission.complete();
+      await started;
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, contains('registerForRemoteNotifications'));
+      expect(
+        calls.indexOf('requestNotificationPermission'),
+        lessThan(calls.indexOf('registerForRemoteNotifications')),
+      );
+    },
+  );
+
   test('reports scene 1 with the time captured when login opens', () async {
     final riskReported = Completer<RequestOptions>();
     final sessionStore = SessionStore(_MemorySessionPersistence());

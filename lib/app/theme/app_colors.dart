@@ -12,6 +12,9 @@ abstract final class AppColors {
   static const loginButtonEnd = Color.fromRGBO(53, 192, 145, 1);
   static const loginButtonShadow = Color.fromRGBO(171, 235, 214, 0.63);
   static const surface = Color.fromRGBO(255, 255, 255, 1);
+  static const recreditBackground = Color.fromRGBO(244, 244, 244, 1);
+  static const recreditText = Color.fromRGBO(24, 28, 23, 1);
+  static const recreditProgress = Color.fromRGBO(51, 195, 148, 1);
   static const textPrimary = Color.fromRGBO(51, 51, 51, 1);
   static const certificationSectionTitle = Color.fromRGBO(3, 26, 3, 1);
   static const tabUnselected = Color.fromRGBO(140, 140, 140, 1);
@@ -52,6 +55,9 @@ abstract final class AppColors {
   );
   static const homeRecommendationAttentionEnd = Color.fromRGBO(192, 53, 53, 1);
   static const homeRecommendationMuted = Color.fromRGBO(153, 153, 153, 1);
+  static const homePopupBarrier = Color.fromRGBO(0, 0, 0, 0.5);
+  static const homePopupTitle = Color.fromRGBO(59, 197, 151, 1);
+  static const homePopupVersion = Color.fromRGBO(234, 177, 60, 1);
   static const progressBackgroundStart = Color.fromRGBO(228, 255, 246, 1);
   static const progressBackgroundEnd = Color.fromRGBO(254, 251, 240, 1);
   static const progressCardBorder = Color.fromRGBO(255, 221, 111, 1);
@@ -117,6 +123,16 @@ abstract final class AppColors {
   static const mineSectionTitle = Color.fromRGBO(24, 106, 80, 1);
   static const mineItemBackground = Color.fromRGBO(249, 249, 249, 1);
   static const bindCardSuggestionBackground = Color.fromRGBO(0, 0, 0, 0.59);
+  static const accountListBackgroundStart = Color.fromRGBO(226, 255, 247, 1);
+  static const accountListBackgroundEnd = Color.fromRGBO(255, 255, 255, 1);
+  static const accountListCard = Color.fromRGBO(255, 255, 255, 1);
+  static const accountListItem = Color.fromRGBO(249, 249, 249, 1);
+  static const accountListLabel = Color.fromRGBO(153, 153, 153, 1);
+  static const accountListMaintenance = Color.fromRGBO(234, 70, 60, 1);
+  static const accountListDivider = Color.fromRGBO(221, 221, 221, 1);
+  static const accountListAccent = Color.fromRGBO(95, 238, 190, 0.7);
+  static const accountListConfirmText = Color.fromRGBO(255, 255, 255, 1);
+  static const accountListFooterShadow = Color.fromRGBO(233, 233, 233, 0.5);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);
   static const mineAvatar = Color.fromRGBO(25, 64, 226, 1);
   static const mineOrderShadow = Color.fromRGBO(0, 0, 0, 0.09);

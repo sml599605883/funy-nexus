@@ -112,6 +112,7 @@ class FundNexusApp extends StatelessWidget {
           child: MainShellPage(
             sessionExpiryEvents: sessionExpiryCoordinator.events,
             reportService: reporter,
+            popupLoader: (scene) => apiClient.fetchPopup(scene: scene),
           ),
         ),
       ),

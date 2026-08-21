@@ -85,6 +85,29 @@ void main() {
     });
   });
 
+  test('gets the documented Home/Mine popup contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse({
+        'etherifying': 3,
+        'leapt': {'zymometer': 'https://cdn.example.test/popup.png'},
+      });
+    });
+    addTearDown(client.close);
+
+    final response = await client.fetchPopup(scene: 2);
+
+    expect(capturedRequest.method, 'GET');
+    expect(capturedRequest.path, '/viler/aurochses');
+    expect(capturedRequest.queryParameters['unfriended'], 2);
+    expect(response.data['etherifying'].numValue.toInt(), 3);
+    expect(
+      response.data['leapt']['zymometer'].stringValue,
+      'https://cdn.example.test/popup.png',
+    );
+  });
+
   test('posts the documented progress retry contract', () async {
     late RequestOptions capturedRequest;
     final client = _client(sessionStore, (request) {
@@ -129,6 +152,34 @@ void main() {
       'sloe': hasLength(6),
     });
     expect(response.data['semihobos'].listValue, hasLength(1));
+  });
+
+  test('posts the documented account-change contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse(const {
+        'topical': 'https://web.example.com/changed',
+      });
+    });
+    addTearDown(client.close);
+
+    final response = await client.changeProgressAccount(
+      orderNumber: ' ORDER-1 ',
+      bindId: ' bind-42 ',
+    );
+
+    expect(capturedRequest.method, 'POST');
+    expect(capturedRequest.path, '/viler/typographies');
+    expect(capturedRequest.data, {
+      'clipsheet': 'ORDER-1',
+      'overadvertises': 'bind-42',
+      'ohing': hasLength(6),
+    });
+    expect(
+      response.data['topical'].stringValue,
+      'https://web.example.com/changed',
+    );
   });
 
   test(
@@ -489,7 +540,7 @@ void main() {
       return _jsonResponse({
         'fasciitis': '20000',
         'bravo': '',
-        'foresight': const {},
+        'foresight': const {'overadvertises': '5'},
       });
     });
     addTearDown(client.close);
@@ -511,6 +562,7 @@ void main() {
     expect(data.topPrompt, 'Choose an account.');
     expect(data.bottomPrompt, 'Check it carefully.');
     expect(result.code, '20000');
+    expect(result.bindId, '5');
     expect(requests[0].method, 'GET');
     expect(requests[0].path, '/viler/ecclesia');
     expect(requests[0].queryParameters['modernised'], 'product-42');

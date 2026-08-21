@@ -11,7 +11,7 @@ import 'package:fund_nexus/core/state/async_state.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/login/login_page.dart';
-import 'package:fund_nexus/features/product/certification/bind_card_page.dart';
+import 'package:fund_nexus/features/product/account/account_list_page.dart';
 import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
 import 'package:fund_nexus/features/product/credit_review/credit_review_page.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
@@ -130,29 +130,18 @@ class _ProgressPageState extends State<ProgressPage> {
     if (productId.isEmpty || orderNumber.isEmpty || _actionRequesting) return;
     _actionRequesting = true;
     var loadingVisible = false;
-    final apiClient = context.read<ApiClient>();
     try {
       await EasyLoading.show(status: 'Loading...');
       loadingVisible = true;
-      final response = await apiClient.fetchProgressAccounts(
-        productId: productId,
-      );
-      final sections = response.data['semihobos'].listValue;
       await EasyLoading.dismiss(animation: false);
       loadingVisible = false;
       if (!mounted) return;
-      if (sections.isEmpty) {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (_) =>
-                BindCardPage(productId: productId, orderNumber: orderNumber),
-          ),
-        );
-      } else {
-        _showProgressMessage(
-          'Saved payment methods cannot be changed from this version.',
-        );
-      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              AccountListPage(productId: productId, orderNumber: orderNumber),
+        ),
+      );
     } catch (error) {
       if (loadingVisible) await EasyLoading.dismiss(animation: false);
       if (mounted) _showProgressMessage(_messageFor(error));
@@ -417,10 +406,7 @@ class _ProgressCard extends StatelessWidget {
                     onTap: onTap,
                     child: Column(
                       children: [
-                        _ProgressHeader(
-                          item: item,
-                          presentation: presentation,
-                        ),
+                        _ProgressHeader(item: item, presentation: presentation),
                         SizedBox(height: context.r(12)),
                         _ProgressMetrics(
                           item: item,
@@ -448,10 +434,7 @@ class _ProgressCard extends StatelessWidget {
 }
 
 class _ProgressHeader extends StatelessWidget {
-  const _ProgressHeader({
-    required this.item,
-    required this.presentation,
-  });
+  const _ProgressHeader({required this.item, required this.presentation});
 
   final HomeProgressItem item;
   final _ProgressPresentation presentation;

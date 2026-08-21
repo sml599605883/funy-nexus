@@ -22,6 +22,8 @@ class ReportNativeBridge {
       ReportDeviceSnapshot.fromMap(await _map('getDeviceSnapshot') ?? const {});
   Future<String> getPushToken() => _safeString('getPushToken');
   Future<String> getTrackingStatus() => _safeString('getTrackingStatus');
+  Future<void> requestNotificationPermission() =>
+      _safeInvoke('requestNotificationPermission');
   Future<void> requestTrackingPermission() =>
       _safeInvoke('requestTrackingPermission');
   Future<String> requestLocationPermission() =>

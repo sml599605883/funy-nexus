@@ -153,9 +153,13 @@ class BindCardSubmitResult {
   const BindCardSubmitResult({required this.code, required this.bindId});
 
   factory BindCardSubmitResult.fromJson(Object? data, String code) {
+    final json = Json(data);
+    final bindId = json['overadvertises'].stringValue.trim();
     return BindCardSubmitResult(
       code: code,
-      bindId: Json(data)['overadvertises'].stringValue.trim(),
+      bindId: bindId.isNotEmpty
+          ? bindId
+          : json['foresight']['overadvertises'].stringValue.trim(),
     );
   }
 

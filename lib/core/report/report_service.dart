@@ -54,7 +54,12 @@ class ReportService {
       _waitingTracking = first;
       _started = true;
       _listenEvents();
-      if (first) unawaited(native.requestTrackingPermission());
+      // iOS ignores repeat requests after a choice, so this also covers users
+      // upgrading from a version that did not ask for notification access.
+      await native.requestNotificationPermission();
+      if (first) {
+        unawaited(native.requestTrackingPermission());
+      }
       unawaited(startupPermissionsResolved());
       if (!first) unawaited(_reportStartupGoogle());
       unawaited(reportLocationAndDevice());

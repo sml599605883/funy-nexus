@@ -7,6 +7,7 @@ import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/face/face_liveness_bridge.dart';
+import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/risk_report_scene.dart';
@@ -20,6 +21,7 @@ import 'package:fund_nexus/features/product/certification/widgets/personal_infor
 import 'package:fund_nexus/features/product/data/bind_card_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
+import 'package:fund_nexus/features/product/web/product_web_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 typedef BindCardLivenessLauncher = Future<FaceLivenessResult> Function(String);
@@ -28,6 +30,7 @@ class BindCardPage extends StatefulWidget {
   const BindCardPage({
     required this.productId,
     required this.orderNumber,
+    this.isAccountChange = false,
     this.gateway,
     this.faceGateway,
     this.permissions,
@@ -37,6 +40,7 @@ class BindCardPage extends StatefulWidget {
 
   final String productId;
   final String orderNumber;
+  final bool isAccountChange;
   final BindCardGateway? gateway;
   final FaceVerificationGateway? faceGateway;
   final PermissionCoordinator? permissions;
@@ -616,6 +620,25 @@ class _BindCardPageState extends State<BindCardPage> {
       if (!mounted) return;
       if (result.code == '20000') {
         await EasyLoading.showError('Liveness verification was not accepted.');
+        return;
+      }
+      if (widget.isAccountChange) {
+        final bindId = result.bindId.trim();
+        if (bindId.isEmpty) {
+          await EasyLoading.showError('Missing binding information.');
+          return;
+        }
+        final response = await context.read<ApiClient>().changeProgressAccount(
+          orderNumber: widget.orderNumber,
+          bindId: bindId,
+        );
+        final url = response.data['topical'].stringValue.trim();
+        final uri = ProductWebPage.validUri(url);
+        if (uri == null) {
+          await EasyLoading.showError('Invalid account change result url');
+          return;
+        }
+        if (mounted) Navigator.of(context).pop(uri.toString());
         return;
       }
       RiskReportScene.report(

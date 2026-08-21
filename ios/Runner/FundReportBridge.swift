@@ -3,6 +3,7 @@ import AppTrackingTransparency
 import CoreLocation
 import Flutter
 import UIKit
+import UserNotifications
 
 final class FundReportBridge: NSObject, FlutterStreamHandler, CLLocationManagerDelegate {
   static let shared = FundReportBridge()
@@ -24,6 +25,7 @@ final class FundReportBridge: NSObject, FlutterStreamHandler, CLLocationManagerD
       case "getDeviceSnapshot": result(self.deviceSnapshot())
       case "getPushToken": result(self.pushToken)
       case "getTrackingStatus": result(self.trackingStatus())
+      case "requestNotificationPermission": self.requestNotificationPermission(result)
       case "requestTrackingPermission": self.requestTrackingPermission(result)
       case "requestLocationPermission": self.requestLocationPermission(result)
       case "registerForRemoteNotifications":
@@ -81,6 +83,14 @@ final class FundReportBridge: NSObject, FlutterStreamHandler, CLLocationManagerD
         self?.eventSink?(["type": "tracking_status_changed", "status": self?.trackingStatus() ?? ""])
         result(nil)
       }
+    }
+  }
+
+  private func requestNotificationPermission(_ result: @escaping FlutterResult) {
+    UNUserNotificationCenter.current().requestAuthorization(
+      options: [.alert, .badge, .sound]
+    ) { _, _ in
+      DispatchQueue.main.async { result(nil) }
     }
   }
 

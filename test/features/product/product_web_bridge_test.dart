@@ -57,14 +57,8 @@ void main() {
     expect(result.data, {'path': '/viler/public', 'hoods': 'signature'});
   });
 
-  test('opens the DC Google Play target in the external browser', () async {
-    String? openedUrl;
-    final dispatcher = ProductWebBridgeDispatcher(
-      openExternalUrl: (url) async {
-        openedUrl = url;
-        return true;
-      },
-    );
+  test('ignores Google Play on iOS like DC', () async {
+    final dispatcher = const ProductWebBridgeDispatcher();
 
     final result = await dispatcher.dispatch(
       ProductWebBridgeRequest.decode('''
@@ -74,20 +68,34 @@ void main() {
     );
 
     expect(result.code, 0);
-    expect(openedUrl, 'https://example.com/campaign');
   });
 
-  test('rejects a non-web Google Play target', () async {
-    final dispatcher = const ProductWebBridgeDispatcher();
+  test('retry follows DC loading and dismissal lifecycle', () async {
+    final events = <String>[];
+    final dispatcher = ProductWebBridgeDispatcher(
+      retryOrder: (_) async {
+        events.add('retry');
+        return 'https://h5.example/retry';
+      },
+      reloadUrl: (url) async => events.add('reload:$url'),
+      showLoading: () async => events.add('loading'),
+      dismissLoading: () async => events.add('dismiss'),
+    );
 
     final result = await dispatcher.dispatch(
       ProductWebBridgeRequest.decode('''
-        {"action":"${ProductWebBridgeContract.openGooglePlay}",
-         "data":"itms-services://untrusted"}
+        {"action":"${ProductWebBridgeContract.retryOrder}",
+         "data":{"readjusts":"order-1"}}
       '''),
     );
 
-    expect(result.code, -1);
+    expect(result.code, 0);
+    expect(events, [
+      'loading',
+      'retry',
+      'reload:https://h5.example/retry',
+      'dismiss',
+    ]);
   });
 
   test('does not invent unavailable retry/account API behavior', () async {

@@ -9,7 +9,7 @@ import 'package:fund_nexus/features/product/state/product_application_flow.dart'
 import 'package:permission_handler/permission_handler.dart';
 
 void main() {
-  test('uses login then location before requesting admission', () async {
+  test('ends the current application request after opening login', () async {
     final session = _session(authenticated: false);
     final gateway = _Gateway(
       admission: const ProductAdmissionData(
@@ -47,14 +47,8 @@ void main() {
       showMessage: (message) async => events.add('message:$message'),
     );
 
-    expect(events, [
-      'login',
-      'location',
-      'loading',
-      'dismiss',
-      'target:https://web.example.com/application',
-    ]);
-    expect(gateway.admissionRequests, ['product-1']);
+    expect(events, ['login']);
+    expect(gateway.admissionRequests, isEmpty);
   });
 
   test('does not submit admission when location is declined', () async {

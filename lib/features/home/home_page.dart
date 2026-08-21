@@ -17,7 +17,9 @@ import 'package:fund_nexus/features/product/state/product_application_flow.dart'
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({this.onPullToRefresh, super.key});
+
+  final Future<void> Function()? onPullToRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,7 @@ class HomePage extends StatelessWidget {
         if (state case AsyncData<HomeData>(:final data)) {
           return HomeContent(
             data: data,
-            onRefresh: context.read<HomeCubit>().load,
+            onRefresh: onPullToRefresh ?? context.read<HomeCubit>().load,
             onApply: (card) => _apply(context, card),
             onApplyRecommendation: (item) =>
                 _applyProduct(context, item.productId),
@@ -55,7 +57,7 @@ class HomePage extends StatelessWidget {
               children: [
                 HomeContent(
                   data: previousData,
-                  onRefresh: context.read<HomeCubit>().load,
+                  onRefresh: onPullToRefresh ?? context.read<HomeCubit>().load,
                   onApply: (card) => _apply(context, card),
                   onApplyRecommendation: (item) =>
                       _applyProduct(context, item.productId),
@@ -72,7 +74,7 @@ class HomePage extends StatelessWidget {
           }
           return HomeContent(
             data: previousData,
-            onRefresh: context.read<HomeCubit>().load,
+            onRefresh: onPullToRefresh ?? context.read<HomeCubit>().load,
             onApply: (card) => _apply(context, card),
             onApplyRecommendation: (item) =>
                 _applyProduct(context, item.productId),

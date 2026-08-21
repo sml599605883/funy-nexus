@@ -14,6 +14,7 @@ typedef ProductWebAccountAction =
       required String orderNo,
     });
 typedef ProductWebAsyncAction = Future<void> Function();
+typedef ProductWebMessageAction = Future<void> Function(String message);
 
 class ProductWebBridgeDispatcher {
   const ProductWebBridgeDispatcher({
@@ -27,6 +28,9 @@ class ProductWebBridgeDispatcher {
     this.retryOrder,
     this.changeAccount,
     this.reloadUrl,
+    this.showLoading,
+    this.dismissLoading,
+    this.showError,
   });
 
   final ProductWebRiskReporter? reportRisk;
@@ -39,6 +43,9 @@ class ProductWebBridgeDispatcher {
   final ProductWebRetryAction? retryOrder;
   final ProductWebAccountAction? changeAccount;
   final ProductWebUrlAction? reloadUrl;
+  final ProductWebAsyncAction? showLoading;
+  final ProductWebAsyncAction? dismissLoading;
+  final ProductWebMessageAction? showError;
 
   Future<ProductWebBridgeResult> dispatch(
     ProductWebBridgeRequest request,
@@ -56,23 +63,11 @@ class ProductWebBridgeDispatcher {
           );
           return const ProductWebBridgeResult.success();
         case ProductWebBridgeContract.openGooglePlay:
-          final url = _value(request, 'appPkg', fallbackToRaw: true);
-          final uri = Uri.tryParse(url);
-          if (url.isEmpty ||
-              uri == null ||
-              uri.host.isEmpty ||
-              (uri.scheme != 'http' && uri.scheme != 'https')) {
-            return const ProductWebBridgeResult.failure('Invalid external url');
-          }
-          final opened = await openExternalUrl?.call(uri.toString()) ?? false;
-          return opened
-              ? const ProductWebBridgeResult.success()
-              : const ProductWebBridgeResult.failure(
-                  'Unable to open external url',
-                );
+          return const ProductWebBridgeResult.success();
         case ProductWebBridgeContract.openUrl:
           final url = _value(request, 'url', fallbackToRaw: true);
-          if (url.isEmpty || Uri.tryParse(url)?.scheme.isEmpty != false) {
+          final uri = Uri.tryParse(url);
+          if (url.isEmpty || uri == null || uri.scheme.isEmpty) {
             return const ProductWebBridgeResult.failure('Invalid url');
           }
           await openUrl?.call(url);
@@ -105,14 +100,19 @@ class ProductWebBridgeDispatcher {
           if (orderNo.isEmpty || retryOrder == null) {
             return const ProductWebBridgeResult.failure('Missing orderNo');
           }
-          final url = (await retryOrder!(orderNo)).trim();
-          if (url.isEmpty) {
-            return const ProductWebBridgeResult.failure(
-              'Missing retry result url',
-            );
+          await showLoading?.call();
+          try {
+            final url = (await retryOrder!(orderNo)).trim();
+            if (url.isEmpty) {
+              const message = 'Missing retry result url';
+              await showError?.call(message);
+              return const ProductWebBridgeResult.failure(message);
+            }
+            await (reloadUrl ?? openUrl)?.call(url);
+            return const ProductWebBridgeResult.success();
+          } finally {
+            await dismissLoading?.call();
           }
-          await (reloadUrl ?? openUrl)?.call(url);
-          return const ProductWebBridgeResult.success();
         case ProductWebBridgeContract.changeAccount:
           final productId = _value(request, 'pesters');
           final orderNo = _value(request, 'readjusts');
@@ -121,14 +121,19 @@ class ProductWebBridgeDispatcher {
               'Missing account information',
             );
           }
-          final url = await changeAccount!(
-            productId: productId,
-            orderNo: orderNo,
-          );
-          if (url != null && url.trim().isNotEmpty) {
-            await (reloadUrl ?? openUrl)?.call(url.trim());
+          await showLoading?.call();
+          try {
+            final url = await changeAccount!(
+              productId: productId,
+              orderNo: orderNo,
+            );
+            if (url != null && url.trim().isNotEmpty) {
+              await (reloadUrl ?? openUrl)?.call(url.trim());
+            }
+            return const ProductWebBridgeResult.success();
+          } finally {
+            await dismissLoading?.call();
           }
-          return const ProductWebBridgeResult.success();
         default:
           return ProductWebBridgeResult.failure(
             'Unsupported action: ${request.action}',
@@ -137,9 +142,9 @@ class ProductWebBridgeDispatcher {
       }
     } catch (error) {
       final message = error.toString().trim();
-      return ProductWebBridgeResult.failure(
-        message.isEmpty ? 'Unable to complete action' : message,
-      );
+      final resolved = message.isEmpty ? 'Unable to complete action' : message;
+      await showError?.call(resolved);
+      return ProductWebBridgeResult.failure(resolved);
     }
   }
 

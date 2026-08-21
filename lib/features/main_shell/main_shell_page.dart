@@ -6,6 +6,9 @@ import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/navigation/app_route_observer.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/json/json.dart';
+import 'package:fund_nexus/core/navigation/external_url_bridge.dart';
+import 'package:fund_nexus/core/network/api_response.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/navigation/customer_service_navigation.dart';
@@ -17,18 +20,24 @@ import 'package:fund_nexus/features/mine/mine_page.dart';
 import 'package:fund_nexus/features/progress/progress_page.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
+import 'home_popup.dart';
+import 'home_popup_data.dart';
+
+typedef PopupLoader = Future<ApiResponse<Json>> Function(int scene);
 
 class MainShellPage extends StatefulWidget {
   const MainShellPage({
     this.loginPageBuilder,
     this.sessionExpiryEvents,
     this.reportService,
+    this.popupLoader,
     super.key,
   });
 
   final WidgetBuilder? loginPageBuilder;
   final Stream<void>? sessionExpiryEvents;
   final ReportService? reportService;
+  final PopupLoader? popupLoader;
 
   @override
   State<MainShellPage> createState() => _MainShellPageState();
@@ -39,6 +48,8 @@ class _MainShellPageState extends State<MainShellPage>
   bool _openingLogin = false;
   bool _routeVisible = true;
   bool _wasInBackground = false;
+  bool _initialPopupRequested = false;
+  final Set<int> _popupRequestsInFlight = <int>{};
   PageRoute<dynamic>? _subscribedRoute;
   StreamSubscription<void>? _sessionExpirySubscription;
 
@@ -83,6 +94,10 @@ class _MainShellPageState extends State<MainShellPage>
       }
       _subscribedRoute = route;
       appRouteObserver.subscribe(this, route);
+    }
+    if (!_initialPopupRequested) {
+      _initialPopupRequested = true;
+      unawaited(_requestPopup(scene: 1));
     }
   }
 
@@ -129,7 +144,10 @@ class _MainShellPageState extends State<MainShellPage>
           body: IndexedStack(
             index: selectedIndex,
             children: [
-              const HomePage(key: PageStorageKey('home-page')),
+              HomePage(
+                key: const PageStorageKey('home-page'),
+                onPullToRefresh: _refreshHomeFromPull,
+              ),
               const ProgressPage(key: PageStorageKey('progress-page')),
               MinePage(
                 key: const PageStorageKey('mine-page'),
@@ -138,6 +156,7 @@ class _MainShellPageState extends State<MainShellPage>
                 onAccountExitSuccess: () async {
                   context.read<MainTabCubit>().selectTab(0);
                   await context.read<HomeCubit>().load();
+                  unawaited(_requestPopup(scene: 1));
                   if (mounted) setState(() {});
                 },
               ),
@@ -163,6 +182,11 @@ class _MainShellPageState extends State<MainShellPage>
     );
   }
 
+  Future<void> _refreshHomeFromPull() async {
+    await context.read<HomeCubit>().load();
+    if (mounted) unawaited(_requestPopup(scene: 1));
+  }
+
   Future<void> _selectTab(BuildContext context, int index) async {
     final tabs = context.read<MainTabCubit>();
     if (index == tabs.state) return;
@@ -184,9 +208,11 @@ class _MainShellPageState extends State<MainShellPage>
 
     tabs.selectTab(index);
     if (index == 0 || index == 1) {
+      if (index == 0) unawaited(_requestPopup(scene: 1));
       await context.read<HomeCubit>().load();
     } else if (index == 2) {
       await context.read<SessionStore>().refreshPhone();
+      unawaited(_requestPopup(scene: 2));
       if (mounted) setState(() {});
     }
   }
@@ -214,7 +240,49 @@ class _MainShellPageState extends State<MainShellPage>
     final selectedTab = context.read<MainTabCubit>().state;
     if (selectedTab == 0 || selectedTab == 1) {
       unawaited(context.read<HomeCubit>().load());
+      if (selectedTab == 0) unawaited(_requestPopup(scene: 1));
+    } else if (selectedTab == 2) {
+      unawaited(_requestPopup(scene: 2));
     }
+  }
+
+  Future<void> _requestPopup({required int scene}) async {
+    final loader = widget.popupLoader;
+    if (loader == null || !_popupRequestsInFlight.add(scene)) return;
+    try {
+      final response = await loader(scene);
+      final popup = HomePopupData.fromResponse(response.data);
+      final event = switch (popup.type) {
+        HomePopupType.appUpgrade => 'app-upgrade-popup',
+        HomePopupType.membershipUpgrade => 'membership-upgrade-popup',
+        HomePopupType.marketing => 'marketing-popup',
+        HomePopupType.none => 'no-popup',
+        HomePopupType.unsupported => 'unsupported-popup',
+      };
+      debugPrint('[FundPopup] scene=$scene event=$event');
+      if (popup.shouldShow && mounted) {
+        await HomePopup.show(
+          context,
+          popup,
+          externalOpener: (url) => const ExternalUrlBridge().openHttpUrl(url),
+          inAppOpener: _openMarketingTarget,
+        );
+      }
+    } catch (error) {
+      debugPrint('[FundPopup] scene=$scene request failed: $error');
+    } finally {
+      _popupRequestsInFlight.remove(scene);
+    }
+  }
+
+  Future<void> _openMarketingTarget(String rawUrl) async {
+    final uri = ProductWebPage.validUri(rawUrl);
+    if (!mounted || uri == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductWebPage(url: uri.toString()),
+      ),
+    );
   }
 
   Widget _buildLoginPage(BuildContext context) {

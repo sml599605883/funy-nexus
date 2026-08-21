@@ -340,7 +340,10 @@ class ProductRepository
       additionalSuccessCodes: const {'20000'},
       decode: (data) => BindCardSubmitResult.fromJson(data, '0'),
     );
-    return BindCardSubmitResult.fromJson(response.data, response.code);
+    return BindCardSubmitResult(
+      code: response.code,
+      bindId: response.data.bindId,
+    );
   }
 
   @override

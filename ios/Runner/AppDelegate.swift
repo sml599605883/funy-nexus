@@ -13,7 +13,12 @@ import TDMobRisk
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    let launched = super.application(
+      application,
+      didFinishLaunchingWithOptions: launchOptions
+    )
+    faceLivenessBridge.initialize()
+    return launched
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
@@ -80,12 +85,12 @@ import TDMobRisk
       binaryMessenger: registrar.messenger()
     )
     externalUrlChannel.setMethodCallHandler { call, result in
-      guard call.method == "openHttpUrl",
+      guard call.method == "openExternalUrl" || call.method == "openHttpUrl",
             let rawUrl = call.arguments as? String,
             let url = URL(string: rawUrl),
             let scheme = url.scheme?.lowercased(),
-            (scheme == "http" || scheme == "https"),
-            url.host != nil
+            !scheme.isEmpty,
+            (scheme != "http" && scheme != "https" || url.host != nil)
       else {
         result(false)
         return
@@ -114,6 +119,10 @@ private final class FaceLivenessBridge {
   private let country = "sg"
   private lazy var riskManager = TDMobRiskManager.sharedManager()
   private var configured = false
+
+  func initialize() {
+    configureIfNeeded()
+  }
 
   func start(_ arguments: Any?, result: @escaping FlutterResult) {
     DispatchQueue.main.async { [weak self] in

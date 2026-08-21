@@ -8,8 +8,14 @@ abstract final class AppAssets {
   static const homeCreditActivationProgress =
       'assets/home_credit_activation_progress.png';
   static const progressEmpty = 'assets/progress/progress_empty.png';
+  static const recreditIllustration =
+      'assets/recredit/recredit_illustration.png';
+  static const recreditProgressTrack =
+      'assets/recredit/recredit_progress_track.png';
   static const homeChatIcon = 'assets/chat_icon.png';
   static const homePromoBanner = 'assets/home_promo_banner.png';
+  static const homePopupUpgradeTitle = 'assets/home_popup_upgrade_title.png';
+  static const homePopupUpgradeRocket = 'assets/home_popup_upgrade_rocket.png';
 
   static const identityVerificationBackground =
       'assets/identity_verification_background.png';
@@ -29,6 +35,11 @@ abstract final class AppAssets {
       'assets/address_picker/address_picker_chevron.png';
   static const addressPickerOptionsBackground =
       'assets/address_picker/address_picker_options_background.png';
+
+  static const accountAddIcon = 'assets/account_add_icon.png';
+  static const accountAddMethodBorder = 'assets/account_add_method_border.png';
+  static const accountOptionSelected = 'assets/account_option_selected.png';
+  static const accountOptionUnselected = 'assets/account_option_unselected.png';
 
   static const mineOrderAll = 'assets/mine_orders_all.png';
   static const mineOrderUnpaid = 'assets/mine_orders_unpaid.png';

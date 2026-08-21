@@ -2,6 +2,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/features/product/data/bind_card_data.dart';
 
 void main() {
+  test('reads the bound account id from the response payload or envelope', () {
+    expect(
+      BindCardSubmitResult.fromJson(const {'overadvertises': '5'}, '00').bindId,
+      '5',
+    );
+    expect(
+      BindCardSubmitResult.fromJson(const {
+        'foresight': {'overadvertises': '5'},
+      }, '00').bindId,
+      '5',
+    );
+  });
+
   test('parses dynamic bank fields and their channel values', () {
     final data = BindCardData.fromJson({
       'foresight': {

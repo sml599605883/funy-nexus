@@ -5,6 +5,8 @@ import 'package:fund_nexus/features/product/certification/widgets/certification_
 
 void main() {
   testWidgets('matches the design button positions and styles', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(375, 812));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await _pumpPopup(tester, onExit: () {});
 
     final card = tester.getRect(
@@ -17,11 +19,13 @@ void main() {
       find.byKey(CertificationRetentionPopup.exitButtonKey),
     );
 
+    expect(card.size, const Size(375, 500));
     expect(continueButton.left - card.left, 24);
-    expect(continueButton.top - card.top, 160);
-    expect(continueButton.size, const Size(247, 40));
-    expect(exitButton.top - card.top, 212);
-    expect(exitButton.height, 18);
+    expect(continueButton.top - card.top, closeTo(307.69, 0.01));
+    expect(continueButton.width, 327.0);
+    expect(continueButton.height, 40.0);
+    expect(exitButton.top - card.top, closeTo(407.69, 0.01));
+    expect(exitButton.height, 18.0);
 
     final decoration =
         tester
@@ -46,6 +50,8 @@ void main() {
   testWidgets('Continue dismisses and Exit invokes its callback once', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(375, 812));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     var exitCount = 0;
     await _pumpPopup(tester, onExit: () => exitCount++);
 

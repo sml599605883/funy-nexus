@@ -15,6 +15,14 @@ class ExternalUrlBridge {
         (uri.scheme != 'http' && uri.scheme != 'https')) {
       return false;
     }
+    return openUri(uri);
+  }
+
+  Future<bool> openUri(Uri uri) async {
+    if (uri.scheme.isEmpty ||
+        ((uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isEmpty)) {
+      return false;
+    }
     try {
       return await _channel.invokeMethod<bool>('openHttpUrl', uri.toString()) ??
           false;

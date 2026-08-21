@@ -162,6 +162,19 @@ class ApiClient {
     );
   }
 
+  /// Fetches the server-driven popup for Home (scene 1) or Mine (scene 2).
+  ///
+  /// The popup UI is intentionally owned by the feature layer. This method
+  /// only performs the documented request and preserves the raw response data
+  /// for the later popup implementations.
+  Future<ApiResponse<Json>> fetchPopup({required int scene}) {
+    return get<Json>(
+      '/viler/aurochses',
+      queryParameters: {'unfriended': scene},
+      decode: (data) => Json(data),
+    );
+  }
+
   Future<ApiResponse<Json>> fetchCertificationRetention({
     required String type,
     required String productId,
@@ -230,6 +243,21 @@ class ApiClient {
         'modernised': productId.trim(),
         'occident': ApiSignature.randomDigits(6),
         'sloe': ApiSignature.randomDigits(6),
+      },
+      decode: (data) => Json(data),
+    );
+  }
+
+  Future<ApiResponse<Json>> changeProgressAccount({
+    required String orderNumber,
+    required String bindId,
+  }) {
+    return post<Json>(
+      '/viler/typographies',
+      data: {
+        'clipsheet': orderNumber.trim(),
+        'overadvertises': bindId.trim(),
+        'ohing': ApiSignature.randomDigits(6),
       },
       decode: (data) => Json(data),
     );

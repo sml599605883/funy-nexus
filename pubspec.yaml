@@ -42,7 +42,7 @@ dependencies:
   device_info_plus: ^13.2.0
   package_info_plus: ^10.2.1
   encrypt: ^5.0.3
-  webview_flutter: ^4.14.1
+  flutter_inappwebview: ^6.1.5
   flutter_easyloading: ^3.0.5
   flutter_image_compress: ^2.4.0
   image_picker: ^1.2.2
@@ -76,8 +76,11 @@ flutter:
   assets:
     - assets/
     - assets/home_credit_activation_progress.png
+    - assets/home_popup_upgrade_title.png
+    - assets/home_popup_upgrade_rocket.png
     - assets/address_picker/
     - assets/progress/
+    - assets/recredit/
     - assets/tabbar/
 
   # To add assets to your application, add an assets section, like this:
