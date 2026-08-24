@@ -10,6 +10,7 @@ final class FundReportBridge: NSObject, FlutterStreamHandler, CLLocationManagerD
 
   private var eventSink: FlutterEventSink?
   private var pushToken = ""
+  private var pendingNotificationRoutes: [String] = []
   private var locationManager: CLLocationManager?
   private var locationResult: FlutterResult?
   private var waitingLocationPermission = false
@@ -38,6 +39,10 @@ final class FundReportBridge: NSObject, FlutterStreamHandler, CLLocationManagerD
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
     eventSink = events
     if !pushToken.isEmpty { events(["type": "push_token", "token": pushToken]) }
+    while !pendingNotificationRoutes.isEmpty {
+      let route = pendingNotificationRoutes.removeFirst()
+      events(["type": "push_route", "url": route])
+    }
     return nil
   }
 
@@ -46,6 +51,52 @@ final class FundReportBridge: NSObject, FlutterStreamHandler, CLLocationManagerD
   func updatePushToken(_ token: String) {
     pushToken = token
     if !token.isEmpty { eventSink?(["type": "push_token", "token": token]) }
+  }
+
+  @discardableResult
+  func acceptNotificationPayload(_ userInfo: [AnyHashable: Any]) -> Bool {
+    NSLog("[FundReportBridge] acceptNotificationPayload called")
+    NSLog("[FundReportBridge] userInfo: \(userInfo)")
+    guard let route = notificationRoute(from: userInfo) else {
+      NSLog("[FundReportBridge] Failed to extract route from notification payload")
+      return false
+    }
+    NSLog("[FundReportBridge] Extracted route: \(route)")
+    guard let eventSink else {
+      NSLog("[FundReportBridge] EventSink not available, queueing route")
+      pendingNotificationRoutes.append(route)
+      return true
+    }
+    NSLog("[FundReportBridge] Sending push_route event to Flutter")
+    eventSink(["type": "push_route", "url": route])
+    NSLog("[FundReportBridge] Event sent successfully")
+    return true
+  }
+
+  private func notificationRoute(from userInfo: [AnyHashable: Any]) -> String? {
+    if let route = normalizedNotificationRoute(userInfo["url"]) {
+      return route
+    }
+    if let params = userInfo["params"] as? [AnyHashable: Any] {
+      return normalizedNotificationRoute(params["url"])
+    }
+    guard
+      let paramsText = userInfo["params"] as? String,
+      let paramsData = paramsText.data(using: .utf8),
+      let decoded = try? JSONSerialization.jsonObject(with: paramsData),
+      let params = decoded as? [String: Any]
+    else {
+      return nil
+    }
+    return normalizedNotificationRoute(params["url"])
+  }
+
+  private func normalizedNotificationRoute(_ value: Any?) -> String? {
+    guard let value = value as? String else {
+      return nil
+    }
+    let route = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    return route.isEmpty ? nil : route
   }
 
   private func getLocation(_ result: @escaping FlutterResult) {

@@ -3,6 +3,7 @@ import UIKit
 import StoreKit
 import CFNetwork
 import TDMobRisk
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -13,11 +14,15 @@ import TDMobRisk
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    UNUserNotificationCenter.current().delegate = self
     let launched = super.application(
       application,
       didFinishLaunchingWithOptions: launchOptions
     )
     faceLivenessBridge.initialize()
+    if let payload = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+      reportBridge.acceptNotificationPayload(payload)
+    }
     return launched
   }
 
@@ -110,6 +115,33 @@ import TDMobRisk
 
   override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
     reportBridge.updatePushToken("")
+  }
+
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    NSLog("[AppDelegate] willPresent notification - App in foreground")
+    NSLog("[AppDelegate] userInfo: \(notification.request.content.userInfo)")
+    let routed = reportBridge.acceptNotificationPayload(
+      notification.request.content.userInfo
+    )
+    NSLog("[AppDelegate] routed: \(routed)")
+    completionHandler(routed ? [] : [.banner, .badge, .sound])
+  }
+
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    NSLog("[AppDelegate] didReceive notification response - User tapped notification")
+    NSLog("[AppDelegate] userInfo: \(response.notification.request.content.userInfo)")
+    reportBridge.acceptNotificationPayload(
+      response.notification.request.content.userInfo
+    )
+    completionHandler()
   }
 }
 

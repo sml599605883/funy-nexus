@@ -10,12 +10,20 @@ import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_crypto.dart';
 import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/capture_proxy.dart';
+import 'package:fund_nexus/core/push/ios_notification_route_coordinator.dart';
+import 'package:fund_nexus/core/push/push_navigation_helper.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure and start notification routing with custom navigation handler
+  IosNotificationRouteCoordinator.configure(
+    openRoute: PushNavigationHelper.navigateToTarget,
+  );
+  IosNotificationRouteCoordinator.instance.start();
 
   final config = AppConfig.fromEnvironment();
   final systemProxy = config.captureProxyHost.trim().isEmpty

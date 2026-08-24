@@ -12,6 +12,7 @@ import 'package:fund_nexus/core/network/api_response.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/navigation/customer_service_navigation.dart';
+import 'package:fund_nexus/core/push/push_navigation_helper.dart';
 import 'package:fund_nexus/features/home/home_page.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/login/login_page.dart';
@@ -84,6 +85,14 @@ class _MainShellPageState extends State<MainShellPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Configure push navigation tab switching
+    if (PushNavigationHelper.tabNavigator == null) {
+      PushNavigationHelper.tabNavigator = (index) {
+        context.read<MainTabCubit>().selectTab(index);
+      };
+    }
+
     _sessionExpirySubscription ??= widget.sessionExpiryEvents?.listen(
       (_) => unawaited(_openLoginAfterSessionExpiry()),
     );
@@ -153,6 +162,7 @@ class _MainShellPageState extends State<MainShellPage>
                 key: const PageStorageKey('mine-page'),
                 phone: context.read<SessionStore>().phone,
                 onCustomerService: () => _openCustomerService(context),
+                onPrivacyPolicy: () => _openPrivacyPolicy(context),
                 onAccountExitSuccess: () async {
                   context.read<MainTabCubit>().selectTab(0);
                   await context.read<HomeCubit>().load();
@@ -177,6 +187,16 @@ class _MainShellPageState extends State<MainShellPage>
       MaterialPageRoute<void>(
         builder: (_) => ProductWebPage(
           url: customerServiceUrl(context.read<AppConfig>().webBaseUrl),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductWebPage(
+          url: privacyPolicyUrl(context.read<AppConfig>().webBaseUrl),
         ),
       ),
     );
@@ -288,6 +308,7 @@ class _MainShellPageState extends State<MainShellPage>
   Widget _buildLoginPage(BuildContext context) {
     final riskStartedAtSeconds = ReportService.nowSeconds();
     return LoginPage(
+      onPrivacyPolicyTap: () => _openPrivacyPolicy(context),
       onLoginSuccess: () async {
         await widget.reportService?.loginSucceeded(
           riskStartedAtSeconds: riskStartedAtSeconds,

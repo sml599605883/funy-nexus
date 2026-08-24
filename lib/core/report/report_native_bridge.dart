@@ -1,15 +1,37 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../json/json.dart';
 import 'report_models.dart';
 
 class ReportNativeBridge {
-  ReportNativeBridge({MethodChannel? channel, EventChannel? eventChannel})
+  ReportNativeBridge._({MethodChannel? channel, EventChannel? eventChannel})
     : _channel = channel ?? const MethodChannel(channelName),
       _events = eventChannel ?? const EventChannel(eventChannelName);
+
+  static final shared = ReportNativeBridge._();
+
+  factory ReportNativeBridge({MethodChannel? channel, EventChannel? eventChannel}) {
+    if (channel != null || eventChannel != null) {
+      return ReportNativeBridge._(channel: channel, eventChannel: eventChannel);
+    }
+    return shared;
+  }
+
   static const channelName = 'fund_nexus/report_bridge';
   static const eventChannelName = 'fund_nexus/report_events';
   final MethodChannel _channel;
   final EventChannel _events;
+
+  Stream<Json>? _cachedEventStream;
+
+  Stream<Json> events() {
+    _cachedEventStream ??= _events.receiveBroadcastStream().map((event) {
+      debugPrint('[ReportNativeBridge] Received event from native: $event');
+      return Json(event);
+    }).asBroadcastStream();
+    debugPrint('[ReportNativeBridge] Returning cached broadcast stream (isBroadcast: ${_cachedEventStream!.isBroadcast})');
+    return _cachedEventStream!;
+  }
 
   Future<ReportLocation?> getLocation() async {
     final map = await _map('getLocation');
@@ -30,7 +52,7 @@ class ReportNativeBridge {
       _safeString('requestLocationPermission');
   Future<void> registerForRemoteNotifications() =>
       _safeInvoke('registerForRemoteNotifications');
-  Stream<Json> events() => _events.receiveBroadcastStream().map(Json.new);
+
   Future<Map<Object?, Object?>?> _map(String method) async {
     try {
       return await _channel.invokeMapMethod<Object?, Object?>(method);

@@ -47,6 +47,23 @@ void main() {
     expect(customerServiceCalls, 1);
   });
 
+  testWidgets('opens privacy agreement from Mine', (tester) async {
+    var privacyPolicyCalls = 0;
+    await tester.pumpWidget(
+      _minePage(
+        phone: '96212341300',
+        onPrivacyPolicy: () => privacyPolicyCalls++,
+      ),
+    );
+
+    final privacyAgreement = find.byKey(const Key('mine-privacy-agreement'));
+    final privacyTap = tester.widget<InkWell>(
+      find.descendant(of: privacyAgreement, matching: find.byType(InkWell)),
+    );
+    privacyTap.onTap!();
+    expect(privacyPolicyCalls, 1);
+  });
+
   testWidgets('opens and closes the account action panel', (tester) async {
     await tester.pumpWidget(
       _minePage(phone: '96212341300', onAccountExit: (_) async => true),
@@ -174,6 +191,7 @@ Widget _minePage({
   AccountExitHandler? onAccountExit,
   AccountExitMessageHandler? showMessage,
   VoidCallback? onCustomerService,
+  VoidCallback? onPrivacyPolicy,
 }) {
   return RepositoryProvider<SessionStore>.value(
     value: _TestSessionStore(phone),
@@ -184,6 +202,7 @@ Widget _minePage({
           body: MinePage(
             onAccountExit: onAccountExit,
             onCustomerService: onCustomerService,
+            onPrivacyPolicy: onPrivacyPolicy,
             showLoading: () async {},
             dismissLoading: () async {},
             showMessage: showMessage,

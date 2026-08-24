@@ -5,11 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
+import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
+import 'package:fund_nexus/core/navigation/customer_service_navigation.dart';
 import 'package:fund_nexus/features/login/state/login_cubit.dart';
 import 'package:fund_nexus/features/login/widgets/login_visuals.dart';
 import 'package:fund_nexus/features/login/widgets/login_form_widgets.dart';
+import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({
@@ -43,10 +46,20 @@ class LoginPage extends StatelessWidget {
       ),
       child: _LoginView(
         onPrivacyPolicyTap:
-            onPrivacyPolicyTap ?? () => debugPrint('Privacy Policy requested'),
+            onPrivacyPolicyTap ?? () => _openPrivacyPolicy(context),
         onTermsOfServiceTap:
             onTermsOfServiceTap ??
             () => debugPrint('Terms of Service requested'),
+      ),
+    );
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductWebPage(
+          url: privacyPolicyUrl(context.read<AppConfig>().webBaseUrl),
+        ),
       ),
     );
   }

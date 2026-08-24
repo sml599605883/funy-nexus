@@ -304,6 +304,8 @@ class ReportService {
           event['status'].stringValue != 'not_determined') {
         unawaited(_reportStartupGoogle());
       }
+      // Note: push_route events are handled by IosNotificationRouteCoordinator
+      // which listens to the same event stream
     }, onError: _log);
   }
 

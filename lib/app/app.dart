@@ -8,6 +8,7 @@ import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_crypto.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
+import 'package:fund_nexus/core/push/ios_notification_route_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/session/session_expiry_coordinator.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
@@ -90,6 +91,7 @@ class FundNexusApp extends StatelessWidget {
         title: 'Fund Nexus',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        navigatorKey: IosNotificationRouteCoordinator.navigatorKey,
         navigatorObservers: [appRouteObserver],
         builder: (context, child) => EasyLoading.init()(
           context,

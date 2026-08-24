@@ -9,11 +9,13 @@ class MineBody extends StatelessWidget {
   const MineBody({
     required this.onAccountTap,
     this.onCustomerService,
+    this.onPrivacyPolicy,
     super.key,
   });
 
   final VoidCallback onAccountTap;
   final VoidCallback? onCustomerService;
+  final VoidCallback? onPrivacyPolicy;
 
   @override
   Widget build(BuildContext context) {
@@ -57,10 +59,11 @@ class MineBody extends StatelessWidget {
               label: 'APP Version',
             ),
             SizedBox(height: context.r(8)),
-            const MineMenuItem(
+            MineMenuItem(
               key: Key('mine-privacy-agreement'),
               iconAsset: AppAssets.minePrivacyAgreement,
               label: 'Privacy Agreement',
+              onTap: onPrivacyPolicy,
             ),
             SizedBox(height: context.r(8)),
             MineMenuItem(
