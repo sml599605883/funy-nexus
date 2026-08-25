@@ -56,84 +56,87 @@ class LoanHero extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onApply,
-        child: Container(
-          key: const Key('home-loan-hero'),
-          width: context.r(375),
-          height: certificationProgress.isEmpty
-              ? context.r(383)
-              : context.r(383 + 39) + _creditProgressHeight(context),
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage(AppAssets.homeLoanHero),
-              fit: BoxFit.fill,
-            ),
-          ),
-          child: Column(
-            children: [
-              SizedBox(height: context.r(30)),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.r(40)),
-                child: _ProductIdentity(
-                  productName: productName,
-                  productLogo: productLogo,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              key: const Key('home-loan-hero'),
+              width: context.r(375),
+              height: context.r(383),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(AppAssets.homeLoanHero),
+                  fit: BoxFit.fill,
                 ),
               ),
-              SizedBox(height: context.r(50)),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.r(40)),
-                child: _Amount(amount: amount, label: amountLabel),
-              ),
-              SizedBox(height: context.r(30)),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.r(52)),
-                child: loanTermRows.isEmpty
-                    ? Row(
-                        children: [
-                          Expanded(
-                            child: _LoanStat(
-                              label: loanTermLabel,
-                              value: loanTerm,
-                            ),
+              child: Column(
+                children: [
+                  SizedBox(height: context.r(30)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: context.r(40)),
+                    child: _ProductIdentity(
+                      productName: productName,
+                      productLogo: productLogo,
+                    ),
+                  ),
+                  SizedBox(height: context.r(50)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: context.r(40)),
+                    child: _Amount(amount: amount, label: amountLabel),
+                  ),
+                  SizedBox(height: context.r(30)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: context.r(52)),
+                    child: loanTermRows.isEmpty
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: _LoanStat(
+                                  label: loanTermLabel,
+                                  value: loanTerm,
+                                ),
+                              ),
+                              SizedBox(width: context.r(35)),
+                              Expanded(
+                                child: _LoanStat(
+                                  label: interestRateLabel,
+                                  value: interestRate,
+                                ),
+                              ),
+                            ],
+                          )
+                        : _LoanTermStats(rows: loanTermRows),
+                  ),
+                  SizedBox(height: context.r(28)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: context.r(16)),
+                    child: SizedBox(
+                      height: context.r(17),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          description,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: AppColors.homeAmount,
+                            fontSize: context.r(14),
+                            fontWeight: FontWeight.w700,
+                            height: 17 / 14,
                           ),
-                          SizedBox(width: context.r(35)),
-                          Expanded(
-                            child: _LoanStat(
-                              label: interestRateLabel,
-                              value: interestRate,
-                            ),
-                          ),
-                        ],
-                      )
-                    : _LoanTermStats(rows: loanTermRows),
-              ),
-              SizedBox(height: context.r(28)),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.r(16)),
-                child: SizedBox(
-                  height: context.r(17),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      description,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: AppColors.homeAmount,
-                        fontSize: context.r(14),
-                        fontWeight: FontWeight.w700,
-                        height: 17 / 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  SizedBox(height: context.r(12)),
+                  _ApplyButton(text: actionText),
+                ],
               ),
-              SizedBox(height: context.r(12)),
-              _ApplyButton(text: actionText),
-              if (certificationProgress.isNotEmpty) ...[
-                SizedBox(height: context.r(39)),
-                _CreditActivationProgress(items: certificationProgress),
-              ],
+            ),
+            if (certificationProgress.isNotEmpty) ...[
+              _CreditActivationProgress(items: certificationProgress),
+              SizedBox(height: context.r(16)),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -169,7 +172,6 @@ class _CreditActivationProgress extends StatelessWidget {
       child: DecoratedBox(
         key: const Key('home-credit-activation-progress-background'),
         decoration: const BoxDecoration(
-          color: AppColors.homeCreditProgressPanel,
           image: DecorationImage(
             image: AssetImage(AppAssets.homeCreditActivationProgress),
             fit: BoxFit.fill,
@@ -240,7 +242,9 @@ class _CreditProgressTile extends StatelessWidget {
       height: 34 * scale,
       padding: EdgeInsets.symmetric(horizontal: 7 * scale, vertical: 4 * scale),
       decoration: BoxDecoration(
-        color: AppColors.homeCreditProgressTile,
+        color: active
+            ? AppColors.homeCreditProgressActive
+            : AppColors.homeCreditProgressTile,
         borderRadius: BorderRadius.circular(4 * scale),
       ),
       child: Column(
@@ -253,7 +257,9 @@ class _CreditProgressTile extends StatelessWidget {
                 item.amount,
                 maxLines: 1,
                 style: TextStyle(
-                  color: AppColors.homeCreditProgressAmount,
+                  color: active
+                      ? AppColors.surface
+                      : AppColors.homeCreditProgressAmount,
                   fontSize: 10 * scale,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                   height: 12 / 10,
@@ -269,7 +275,9 @@ class _CreditProgressTile extends StatelessWidget {
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: AppColors.homeCreditProgressLabel,
+                color: active
+                    ? AppColors.surface
+                    : AppColors.homeCreditProgressLabel,
                 fontSize: 8 * scale,
                 height: 10 / 8,
               ),
@@ -304,10 +312,14 @@ class _CreditProgressTrack extends StatelessWidget {
               child: ColoredBox(color: AppColors.homeCreditProgressTrack),
             ),
             if (activeFraction > 0)
-              FractionallySizedBox(
-                widthFactor: activeFraction,
-                child: const ColoredBox(
-                  color: AppColors.homeCreditProgressActive,
+              Positioned.fill(
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: activeFraction,
+                  child: const ColoredBox(
+                    key: Key('home-credit-activation-track-active'),
+                    color: AppColors.homeCreditProgressActive,
+                  ),
                 ),
               ),
           ],

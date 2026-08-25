@@ -79,7 +79,9 @@ class _MainShellPageState extends State<MainShellPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(widget.reportService?.start());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(widget.reportService?.start());
+    });
   }
 
   @override

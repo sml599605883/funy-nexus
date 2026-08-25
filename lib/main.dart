@@ -55,6 +55,7 @@ Future<void> main() async {
     apiClient: apiClient,
     sessionStore: sessionStore,
     apiCrypto: apiCrypto,
+    deviceMetadataStore: deviceMetadataStore,
   );
 
   runApp(

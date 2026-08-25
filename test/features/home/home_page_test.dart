@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
+import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/home_page.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
@@ -303,17 +304,36 @@ void main() {
       find.byKey(const Key('home-credit-activation-step-inactive-1')),
       findsOneWidget,
     );
+    final activeStep = tester.widget<Container>(
+      find.byKey(const Key('home-credit-activation-step-active-0')),
+    );
+    final inactiveStep = tester.widget<Container>(
+      find.byKey(const Key('home-credit-activation-step-inactive-1')),
+    );
+    expect(
+      (activeStep.decoration as BoxDecoration).color,
+      AppColors.homeCreditProgressActive,
+    );
+    expect(
+      (inactiveStep.decoration as BoxDecoration).color,
+      AppColors.homeCreditProgressTile,
+    );
     expect(
       find.byKey(const Key('home-credit-activation-track')),
       findsOneWidget,
     );
+    final activeTrack = find.byKey(
+      const Key('home-credit-activation-track-active'),
+    );
+    expect(activeTrack, findsOneWidget);
+    expect(tester.getSize(activeTrack).width, closeTo(295 / 4, 0.001));
     expect(
       tester.getSize(find.byKey(const Key('home-credit-activation-progress'))),
       const Size(343, 137),
     );
     expect(
       tester.getSize(find.byKey(const Key('home-loan-hero'))),
-      const Size(375, 559),
+      const Size(375, 383),
     );
     final progress = tester.widget<SizedBox>(
       find.byKey(const Key('home-credit-activation-progress')),
@@ -322,9 +342,19 @@ void main() {
       find.byKey(const Key('home-credit-activation-progress-background')),
     );
     expect(progress.width, 343);
+    expect((background.decoration as BoxDecoration).color, isNull);
     expect(
       (background.decoration as BoxDecoration).image!.image,
       const AssetImage('assets/home_credit_activation_progress.png'),
+    );
+    expect(
+      tester
+              .getTopLeft(
+                find.byKey(const Key('home-credit-activation-progress')),
+              )
+              .dy -
+          tester.getBottomLeft(find.byKey(const Key('home-loan-hero'))).dy,
+      16,
     );
   });
 
@@ -558,6 +588,13 @@ void main() {
     );
     expect(find.text('Recommendation'), findsOneWidget);
     expect(find.text('More'), findsNothing);
+    final titleMarker = tester.widget<Image>(
+      find.byKey(const Key('home-recommendation-title-marker')),
+    );
+    expect(
+      (titleMarker.image as AssetImage).assetName,
+      AppAssets.mineSectionTitleMarker,
+    );
     expect(
       find.byKey(const Key('home-recommendation-card-recommended-1')),
       findsOneWidget,

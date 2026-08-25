@@ -80,6 +80,8 @@ flutter:
     - assets/home_popup_upgrade_rocket.png
     - assets/address_picker/
     - assets/progress/
+    - assets/progress/progress_card_green.png
+    - assets/progress/progress_card_yellow.png
     - assets/recredit/
     - assets/tabbar/
 

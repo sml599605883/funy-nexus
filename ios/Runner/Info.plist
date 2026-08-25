@@ -26,20 +26,17 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Allow camera access only when you choose to capture an identity document for verification.</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>Tracking helps measure campaign performance and prevent fraud.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Location is used only during an application step to verify your request and help prevent fraud.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow photo access only when you choose an identity document from your photo library.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- Development API currently uses HTTP; replace with HTTPS before release. -->
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow camera access only when you choose to capture an identity document for verification.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location is used only during an application step to verify your request and help prevent fraud.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Tracking helps measure campaign performance and prevent fraud.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

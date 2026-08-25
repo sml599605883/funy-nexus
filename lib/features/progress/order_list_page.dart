@@ -343,9 +343,9 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = item.isOverdue
+    final statusColor = item.statusCode == 180
         ? AppColors.orderOverdue
-        : AppColors.orderActive;
+        : AppColors.orderRepayActive;
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(context.r(8)),
@@ -429,7 +429,7 @@ class _OrderCard extends StatelessWidget {
           if (onAction != null)
             SizedBox(
               width: double.infinity,
-              height: context.r(60),
+              height: context.r(39),
               child: ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
@@ -439,7 +439,7 @@ class _OrderCard extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   shape: const RoundedRectangleBorder(),
                 ),
-                child: Text(item.actionText),
+                child: const Text('Repay Now'),
               ),
             ),
         ],

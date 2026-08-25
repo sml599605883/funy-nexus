@@ -210,6 +210,7 @@ class _ProductWebPageState extends State<ProductWebPage>
   var _loading = true;
   var _title = 'Loading...';
   var _loadFailed = false;
+  var _isLeaving = false;
 
   Uri? get _initialUri {
     final uri = Uri.tryParse(widget.url.trim());
@@ -363,7 +364,7 @@ class _ProductWebPageState extends State<ProductWebPage>
       await _goBackOneHistoryEntry(controller);
       return;
     }
-    if (mounted) Navigator.of(context).pop();
+    _popRoute();
   }
 
   Future<void> _goBackOneHistoryEntry(InAppWebViewController controller) async {
@@ -472,7 +473,15 @@ class _ProductWebPageState extends State<ProductWebPage>
   }
 
   Future<void> _closePage() async {
-    if (mounted) Navigator.of(context).pop();
+    _popRoute();
+  }
+
+  void _popRoute() {
+    if (!mounted || _isLeaving) return;
+    setState(() => _isLeaving = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
   }
 
   Future<void> _goHome() async {
@@ -494,9 +503,9 @@ class _ProductWebPageState extends State<ProductWebPage>
   Widget build(BuildContext context) {
     final uri = _initialUri;
     return PopScope(
-      canPop: false,
+      canPop: _isLeaving,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_handleBack());
+        if (!didPop && !_isLeaving) unawaited(_handleBack());
       },
       child: Scaffold(
         appBar: AppBar(
@@ -504,7 +513,7 @@ class _ProductWebPageState extends State<ProductWebPage>
           leading: IconButton(
             tooltip: 'Back',
             icon: const Icon(CupertinoIcons.back),
-            onPressed: _handleBack,
+            onPressed: _isLeaving ? null : _handleBack,
           ),
         ),
         body: uri == null

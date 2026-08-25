@@ -80,7 +80,7 @@ class HomeData {
   }
 
   static const _bannerTypes = {'BANNER', 'DonkeyCatch'};
-  static const _largeCardTypes = {'LARGE_CARD', 'Majordomo'};
+  static const _largeCardTypes = {'Majordomo', 'Nonsteroidal'};
   static const _progressTypes = {'PROCESS_LIST', 'Acidulations'};
   static const _productListTypes = {'PRODUCT_LIST', 'Toolings'};
 }

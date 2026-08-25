@@ -8,6 +8,8 @@ abstract final class AppAssets {
   static const homeCreditActivationProgress =
       'assets/home_credit_activation_progress.png';
   static const progressEmpty = 'assets/progress/progress_empty.png';
+  static const progressCardYellow = 'assets/progress/progress_card_yellow.png';
+  static const progressCardGreen = 'assets/progress/progress_card_green.png';
   static const recreditIllustration =
       'assets/recredit/recredit_illustration.png';
   static const recreditProgressTrack =

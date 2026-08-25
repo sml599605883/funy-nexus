@@ -40,6 +40,10 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
   late final TextEditingController _nameController;
   late final TextEditingController _idController;
   late final TextEditingController _birthdayController;
+  late final FocusNode _nameFocusNode;
+  late final FocusNode _idFocusNode;
+  final _nameInputKey = GlobalKey();
+  final _idInputKey = GlobalKey();
   bool _isSubmitting = false;
 
   @override
@@ -52,6 +56,8 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
     _birthdayController = TextEditingController(
       text: _normalizeBirthday(widget.recognizedInfo.dateOfBirth),
     );
+    _nameFocusNode = FocusNode()..addListener(_ensureNameVisible);
+    _idFocusNode = FocusNode()..addListener(_ensureIdVisible);
   }
 
   @override
@@ -59,7 +65,50 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
     _nameController.dispose();
     _idController.dispose();
     _birthdayController.dispose();
+    _nameFocusNode
+      ..removeListener(_ensureNameVisible)
+      ..dispose();
+    _idFocusNode
+      ..removeListener(_ensureIdVisible)
+      ..dispose();
     super.dispose();
+  }
+
+  void _ensureNameVisible() =>
+      _ensureFocusedFieldVisible(_nameFocusNode, _nameInputKey);
+
+  void _ensureIdVisible() =>
+      _ensureFocusedFieldVisible(_idFocusNode, _idInputKey);
+
+  void _ensureFocusedFieldVisible(FocusNode focusNode, GlobalKey inputKey) {
+    if (!focusNode.hasFocus) return;
+    void scroll() {
+      if (!mounted || !focusNode.hasFocus) return;
+      final fieldContext = inputKey.currentContext;
+      if (fieldContext == null) return;
+      final scrollable = Scrollable.maybeOf(fieldContext);
+      final renderObject = fieldContext.findRenderObject();
+      if (scrollable == null || renderObject is! RenderBox) return;
+      final rect = renderObject.localToGlobal(Offset.zero) & renderObject.size;
+      final mediaQuery = MediaQuery.of(fieldContext);
+      final safeBottom =
+          mediaQuery.size.height - mediaQuery.viewInsets.bottom - context.r(48);
+      final overflow = rect.bottom - safeBottom;
+      if (overflow <= 0) return;
+      final position = scrollable.position;
+      final target = (position.pixels + overflow).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      position.animateTo(
+        target,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => scroll());
+    Future<void>.delayed(const Duration(milliseconds: 400), scroll);
   }
 
   @override
@@ -107,7 +156,11 @@ class _IdentityConfirmationPageState extends State<IdentityConfirmationPage> {
                       child: _IdentityInformationCard(
                         imageUrl: widget.recognizedInfo.imageUrl,
                         nameController: _nameController,
+                        nameFocusNode: _nameFocusNode,
+                        nameInputKey: _nameInputKey,
                         idController: _idController,
+                        idFocusNode: _idFocusNode,
+                        idInputKey: _idInputKey,
                         birthdayController: _birthdayController,
                         onBirthdayTap: _selectBirthday,
                       ),
@@ -204,14 +257,22 @@ class _IdentityInformationCard extends StatelessWidget {
   const _IdentityInformationCard({
     required this.imageUrl,
     required this.nameController,
+    required this.nameFocusNode,
+    required this.nameInputKey,
     required this.idController,
+    required this.idFocusNode,
+    required this.idInputKey,
     required this.birthdayController,
     required this.onBirthdayTap,
   });
 
   final String imageUrl;
   final TextEditingController nameController;
+  final FocusNode nameFocusNode;
+  final GlobalKey nameInputKey;
   final TextEditingController idController;
+  final FocusNode idFocusNode;
+  final GlobalKey idInputKey;
   final TextEditingController birthdayController;
   final VoidCallback onBirthdayTap;
 
@@ -237,6 +298,8 @@ class _IdentityInformationCard extends StatelessWidget {
           _IdentityField(
             label: 'Full Name',
             controller: nameController,
+            focusNode: nameFocusNode,
+            inputKey: nameInputKey,
             fieldKey: const Key('identityConfirmationNameInput'),
             textInputAction: TextInputAction.next,
           ),
@@ -244,6 +307,8 @@ class _IdentityInformationCard extends StatelessWidget {
           _IdentityField(
             label: 'ID No.',
             controller: idController,
+            focusNode: idFocusNode,
+            inputKey: idInputKey,
             fieldKey: const Key('identityConfirmationIdInput'),
             textInputAction: TextInputAction.next,
           ),
@@ -295,6 +360,8 @@ class _IdentityField extends StatelessWidget {
     required this.controller,
     required this.fieldKey,
     this.textInputAction,
+    this.focusNode,
+    this.inputKey,
     this.readOnly = false,
     this.showDivider = true,
     this.onTap,
@@ -304,6 +371,8 @@ class _IdentityField extends StatelessWidget {
   final TextEditingController controller;
   final Key fieldKey;
   final TextInputAction? textInputAction;
+  final FocusNode? focusNode;
+  final GlobalKey? inputKey;
   final bool readOnly;
   final bool showDivider;
   final VoidCallback? onTap;
@@ -336,24 +405,28 @@ class _IdentityField extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: TextField(
-              key: fieldKey,
-              controller: controller,
-              readOnly: readOnly,
-              onTap: onTap,
-              maxLines: 1,
-              textAlign: TextAlign.right,
-              textInputAction: textInputAction,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                isDense: true,
-              ),
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: context.r(14),
-                fontWeight: FontWeight.w700,
-                height: 20 / 14,
+            child: KeyedSubtree(
+              key: inputKey,
+              child: TextField(
+                key: fieldKey,
+                controller: controller,
+                focusNode: focusNode,
+                readOnly: readOnly,
+                onTap: onTap,
+                maxLines: 1,
+                textAlign: TextAlign.right,
+                textInputAction: textInputAction,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                ),
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: context.r(14),
+                  fontWeight: FontWeight.w700,
+                  height: 20 / 14,
+                ),
               ),
             ),
           ),

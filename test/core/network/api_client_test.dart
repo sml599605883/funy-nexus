@@ -118,14 +118,15 @@ void main() {
     });
     addTearDown(client.close);
 
-    final response = await client.retryProgressOrder(
-      orderNumber: ' ORDER-1 ',
-    );
+    final response = await client.retryProgressOrder(orderNumber: ' ORDER-1 ');
 
     expect(capturedRequest.method, 'POST');
     expect(capturedRequest.path, '/viler/clipsheet');
     expect(capturedRequest.data, {'readjusts': 'ORDER-1'});
-    expect(response.data['topical'].stringValue, 'https://web.example.com/retry');
+    expect(
+      response.data['topical'].stringValue,
+      'https://web.example.com/retry',
+    );
   });
 
   test('posts the documented progress account-list contract', () async {
@@ -274,7 +275,7 @@ void main() {
         'chippered': null,
         'semihobos': [
           {
-            'etherifying': 'Majordomo',
+            'etherifying': 'Nonsteroidal',
             'mycetozoan': [
               {'apparentness': '₱60,000'},
             ],

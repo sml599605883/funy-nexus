@@ -15,6 +15,10 @@ import UserNotifications
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     UNUserNotificationCenter.current().delegate = self
+
+    // Clear badge count when app launches
+    application.applicationIconBadgeNumber = 0
+
     let launched = super.application(
       application,
       didFinishLaunchingWithOptions: launchOptions

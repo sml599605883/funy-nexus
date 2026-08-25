@@ -11,6 +11,10 @@ void main() {
       PersistentDeviceMetadata.deviceNameKey,
       'fund_nexus.device.server_name',
     );
+    expect(
+      PersistentDeviceMetadata.physicalSizeKey,
+      'fund_nexus.device.physical_size',
+    );
   });
 
   test(
@@ -33,11 +37,21 @@ void main() {
 
     expect(await store.deviceName(), 'iPhone 16 Pro');
   });
+
+  test('persists a valid server-resolved physical size', () async {
+    final persistence = _MemoryDeviceMetadata();
+    final store = DeviceMetadataStore(persistence);
+
+    await store.savePhysicalSize(6.7);
+
+    expect(await store.physicalSize(), '6.7');
+  });
 }
 
 class _MemoryDeviceMetadata implements DeviceMetadataPersistence {
   String? deviceId;
   String? deviceName;
+  String? physicalSize;
 
   @override
   Future<String?> readDeviceId() async => deviceId;
@@ -46,8 +60,14 @@ class _MemoryDeviceMetadata implements DeviceMetadataPersistence {
   Future<String?> readDeviceName() async => deviceName;
 
   @override
+  Future<String?> readPhysicalSize() async => physicalSize;
+
+  @override
   Future<void> writeDeviceId(String value) async => deviceId = value;
 
   @override
   Future<void> writeDeviceName(String value) async => deviceName = value;
+
+  @override
+  Future<void> writePhysicalSize(String value) async => physicalSize = value;
 }

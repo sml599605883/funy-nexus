@@ -6,9 +6,13 @@ abstract interface class DeviceMetadataPersistence {
 
   Future<String?> readDeviceName();
 
+  Future<String?> readPhysicalSize();
+
   Future<void> writeDeviceId(String value);
 
   Future<void> writeDeviceName(String value);
+
+  Future<void> writePhysicalSize(String value);
 }
 
 class PersistentDeviceMetadata implements DeviceMetadataPersistence {
@@ -26,6 +30,7 @@ class PersistentDeviceMetadata implements DeviceMetadataPersistence {
 
   static const deviceIdKey = 'fund_nexus.device.stable_idfv';
   static const deviceNameKey = 'fund_nexus.device.server_name';
+  static const physicalSizeKey = 'fund_nexus.device.physical_size';
 
   final SharedPreferencesAsync _preferences;
   final FlutterSecureStorage _secureStorage;
@@ -37,6 +42,9 @@ class PersistentDeviceMetadata implements DeviceMetadataPersistence {
   Future<String?> readDeviceName() => _preferences.getString(deviceNameKey);
 
   @override
+  Future<String?> readPhysicalSize() => _preferences.getString(physicalSizeKey);
+
+  @override
   Future<void> writeDeviceId(String value) {
     return _secureStorage.write(key: deviceIdKey, value: value);
   }
@@ -44,6 +52,11 @@ class PersistentDeviceMetadata implements DeviceMetadataPersistence {
   @override
   Future<void> writeDeviceName(String value) {
     return _preferences.setString(deviceNameKey, value);
+  }
+
+  @override
+  Future<void> writePhysicalSize(String value) {
+    return _preferences.setString(physicalSizeKey, value);
   }
 }
 
@@ -80,6 +93,17 @@ class DeviceMetadataStore {
       return;
     }
     await _persistence.writeDeviceName(normalized);
+  }
+
+  Future<String?> physicalSize() async {
+    return _normalize(await _persistence.readPhysicalSize());
+  }
+
+  Future<void> savePhysicalSize(num? value) async {
+    if (value == null || !value.isFinite || value <= 0) {
+      return;
+    }
+    await _persistence.writePhysicalSize(value.toString());
   }
 
   static String? _normalize(String? value) {

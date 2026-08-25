@@ -60,6 +60,7 @@ class _EmergencyContactPageState extends State<EmergencyContactPage> {
   String _prompt = '';
   String _loadError = '';
   bool _submitting = false;
+  bool _isLeaving = false;
 
   EmergencyContactGateway get _gateway =>
       widget.gateway ?? context.read<EmergencyContactGateway>();
@@ -70,6 +71,14 @@ class _EmergencyContactPageState extends State<EmergencyContactPage> {
     unawaited(_load());
   }
 
+  void _completeDefaultBack() {
+    if (!mounted || _isLeaving) return;
+    setState(() => _isLeaving = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final busy =
@@ -78,12 +87,12 @@ class _EmergencyContactPageState extends State<EmergencyContactPage> {
       context: context,
       type: '4',
       productId: widget.productId,
-      onDefaultBack: () => Navigator.of(context).maybePop(),
+      onDefaultBack: _completeDefaultBack,
     );
     return PopScope(
-      canPop: false,
+      canPop: _isLeaving,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !busy) onBack();
+        if (!didPop && !busy && !_isLeaving) onBack();
       },
       child: Scaffold(
         backgroundColor: AppColors.homeBackground,
@@ -109,7 +118,7 @@ class _EmergencyContactPageState extends State<EmergencyContactPage> {
                     children: [
                       CertificationPageHeader(
                         title: 'Urgent contact person',
-                        onBack: onBack,
+                        onBack: _isLeaving ? null : onBack,
                         backButtonKey: const Key('emergencyContactBack'),
                       ),
                       Padding(

@@ -59,6 +59,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   String? _addressLoadingKey;
   Future<List<PersonalAddressNode>>? _addressPreloadFuture;
   bool _submitting = false;
+  bool _isLeaving = false;
 
   PersonalInformationGateway get _gateway =>
       widget.gateway ?? context.read<PersonalInformationGateway>();
@@ -84,6 +85,14 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     super.dispose();
   }
 
+  void _completeDefaultBack() {
+    if (!mounted || _isLeaving) return;
+    setState(() => _isLeaving = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final guidance = _guidance(context);
@@ -95,12 +104,12 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       context: context,
       type: _isWorkInformation ? '3' : '2',
       productId: widget.productId,
-      onDefaultBack: () => Navigator.of(context).maybePop(),
+      onDefaultBack: _completeDefaultBack,
     );
     return PopScope(
-      canPop: false,
+      canPop: _isLeaving,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !busy) onBack();
+        if (!didPop && !busy && !_isLeaving) onBack();
       },
       child: Scaffold(
         backgroundColor: AppColors.homeBackground,
@@ -128,7 +137,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                         title: _isWorkInformation
                             ? 'Job information'
                             : 'Basic identity information',
-                        onBack: onBack,
+                        onBack: _isLeaving ? null : onBack,
                         backButtonKey: Key('${_pageKey}Back'),
                       ),
                       Padding(

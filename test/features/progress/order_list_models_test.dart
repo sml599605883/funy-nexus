@@ -38,6 +38,21 @@ void main() {
     expect(item.supportsEarlyRepay, isTrue);
   });
 
+  test('shows repayment action only for repayment statuses', () {
+    final repayStatuses = [180, 174];
+    for (final status in repayStatuses) {
+      final item = OrderListItem.fromJson(
+        Json({'tarsal': status, 'soreness': '', 'circinate': ''}),
+      );
+      expect(item.hasAction, isTrue);
+    }
+
+    final nonRepayItem = OrderListItem.fromJson(
+      Json({'tarsal': 7, 'soreness': 'Repay Now', 'circinate': '/repay'}),
+    );
+    expect(nonRepayItem.hasAction, isFalse);
+  });
+
   test('maps status codes and the documented list envelope', () {
     expect(OrderListStatus.fromCode('7'), OrderListStatus.unpaid);
     expect(OrderListStatus.fromCode('unknown'), OrderListStatus.all);

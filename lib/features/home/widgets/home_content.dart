@@ -62,7 +62,11 @@ class HomeContent extends StatelessWidget {
                 if (data.recommendations.isNotEmpty) ...[
                   SizedBox(height: context.r(16)),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: context.r(16)),
+                    padding: EdgeInsets.only(
+                      left: context.r(16),
+                      right: context.r(16),
+                      bottom: context.r(16),
+                    ),
                     child: RecommendationSection(
                       items: data.recommendations,
                       onApply: onApplyRecommendation,

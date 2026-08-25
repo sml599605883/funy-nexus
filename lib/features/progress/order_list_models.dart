@@ -82,7 +82,7 @@ class OrderListItem {
   final String earlyRepayLabel;
   final String earlyRepayTarget;
 
-  bool get hasAction => actionText.isNotEmpty && actionTarget.isNotEmpty;
+  bool get hasAction => statusCode == 180 || statusCode == 174;
   bool get isOverdue => statusText.toLowerCase().contains('overdue');
 }
 

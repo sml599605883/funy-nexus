@@ -5,7 +5,7 @@ import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_public_params.dart';
 import 'package:fund_nexus/core/network/api_signature.dart';
 
-typedef DeviceNameLookup = Future<String?> Function(String deviceCode);
+typedef DeviceNameLookup = Future<DeviceNameData?> Function(String deviceCode);
 
 class DeviceNameSync {
   DeviceNameSync({
@@ -27,18 +27,19 @@ class DeviceNameSync {
   Future<bool> sync() async {
     try {
       final params = await publicParamsProvider.load();
-      final resolvedName = await _lookup(params.deviceCode) ?? '';
-      if (resolvedName.trim().isEmpty) {
+      final metadata = await _lookup(params.deviceCode);
+      if (metadata == null || metadata.deviceName.trim().isEmpty) {
         return false;
       }
-      await metadataStore.saveDeviceName(resolvedName);
+      await metadataStore.saveDeviceName(metadata.deviceName);
+      await metadataStore.savePhysicalSize(metadata.screenSize);
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  static Future<String?> _lookupWithApi(
+  static Future<DeviceNameData?> _lookupWithApi(
     ApiClient apiClient,
     String deviceCode,
   ) async {
@@ -47,6 +48,6 @@ class DeviceNameSync {
       data: {'emit': deviceCode, 'outpreen': ApiSignature.randomDigits(6)},
       decode: (data) => DeviceNameData.fromJson(Json(data)),
     );
-    return response.data.deviceName;
+    return response.data;
   }
 }

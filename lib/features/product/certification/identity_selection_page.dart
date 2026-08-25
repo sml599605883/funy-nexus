@@ -26,6 +26,7 @@ class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
   ProductIdentityData? _identityData;
   Object? _error;
   late final int _scene2StartTimeSeconds;
+  bool _isLeaving = false;
 
   @override
   void initState() {
@@ -51,6 +52,14 @@ class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
     }
   }
 
+  void _completeDefaultBack() {
+    if (!mounted || _isLeaving) return;
+    setState(() => _isLeaving = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _identityData;
@@ -59,12 +68,12 @@ class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
       context: context,
       type: '0',
       productId: widget.productId,
-      onDefaultBack: () => Navigator.of(context).maybePop(),
+      onDefaultBack: _completeDefaultBack,
     );
     return PopScope(
-      canPop: false,
+      canPop: _isLeaving,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !busy) onBack();
+        if (!didPop && !busy && !_isLeaving) onBack();
       },
       child: Scaffold(
         body: Stack(
@@ -77,7 +86,7 @@ class _IdentitySelectionPageState extends State<IdentitySelectionPage> {
             SafeArea(
               child: Column(
                 children: [
-                  _IdentityHeader(onBack: busy ? () {} : onBack),
+                  _IdentityHeader(onBack: busy || _isLeaving ? () {} : onBack),
                   SizedBox(height: context.r(110)),
                   Expanded(
                     child: _IdentityBody(

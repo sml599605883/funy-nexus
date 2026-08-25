@@ -58,6 +58,7 @@ class _MemoryDeviceMetadata implements DeviceMetadataPersistence {
 
   String? deviceId;
   String? deviceName;
+  String? physicalSize;
 
   @override
   Future<String?> readDeviceId() async => deviceId;
@@ -66,8 +67,14 @@ class _MemoryDeviceMetadata implements DeviceMetadataPersistence {
   Future<String?> readDeviceName() async => deviceName;
 
   @override
+  Future<String?> readPhysicalSize() async => physicalSize;
+
+  @override
   Future<void> writeDeviceId(String value) async => deviceId = value;
 
   @override
   Future<void> writeDeviceName(String value) async => deviceName = value;
+
+  @override
+  Future<void> writePhysicalSize(String value) async => physicalSize = value;
 }

@@ -86,11 +86,11 @@ void main() {
     expect(data.primaryCard?.interestRateIcon, 'https://example.com/rate.png');
   });
 
-  test('accepts the original section names from the response example', () {
+  test('parses Nonsteroidal as the homepage large card', () {
     final data = HomeData.fromJson({
       'semihobos': [
         {
-          'etherifying': 'LARGE_CARD',
+          'etherifying': 'Nonsteroidal',
           'mycetozoan': [
             {'apparentness': '₱60,000'},
           ],
@@ -101,11 +101,11 @@ void main() {
     expect(data.primaryCard?.amount, '₱60,000');
   });
 
-  test('does not use SMALL_CARD as the homepage large card', () {
+  test('does not use an unrelated section as the homepage large card', () {
     final data = HomeData.fromJson({
       'semihobos': [
         {
-          'etherifying': 'Nonsteroidal',
+          'etherifying': 'SMALL_CARD',
           'mycetozoan': [
             {'apparentness': '₱10,000'},
           ],

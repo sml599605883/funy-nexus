@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:adjust_sdk/adjust.dart';
 import 'package:adjust_sdk/adjust_config.dart';
 import 'package:flutter/foundation.dart';
+import '../device/device_metadata_store.dart';
 import '../json/json.dart';
 import '../network/api_client.dart';
 import '../network/api_crypto.dart';
@@ -16,22 +17,28 @@ class ReportService {
     required this.apiClient,
     required this.sessionStore,
     required this.apiCrypto,
+    DeviceMetadataStore? deviceMetadataStore,
     ReportStore? store,
     ReportNativeBridge? native,
     int Function()? nowMillis,
     Future<void> Function(String token)? initializeAdjust,
-  }) : store = store ?? ReportStore(),
+    Future<void> Function(Duration duration)? permissionDelay,
+  }) : deviceMetadataStore = deviceMetadataStore,
+       store = store ?? ReportStore(),
        native = native ?? ReportNativeBridge(),
        _nowMillis = nowMillis ?? (() => DateTime.now().millisecondsSinceEpoch),
-       _initializeAdjust = initializeAdjust ?? _defaultAdjust;
+       _initializeAdjust = initializeAdjust ?? _defaultAdjust,
+       _permissionDelay = permissionDelay ?? Future<void>.delayed;
 
   final ApiClient apiClient;
   final SessionStore sessionStore;
   final ApiCrypto apiCrypto;
+  final DeviceMetadataStore? deviceMetadataStore;
   final ReportStore store;
   final ReportNativeBridge native;
   final int Function() _nowMillis;
   final Future<void> Function(String token) _initializeAdjust;
+  final Future<void> Function(Duration duration) _permissionDelay;
   bool _started = false;
   bool _starting = false;
   bool _marketReporting = false;
@@ -57,10 +64,15 @@ class ReportService {
       // iOS ignores repeat requests after a choice, so this also covers users
       // upgrading from a version that did not ask for notification access.
       await native.requestNotificationPermission();
-      if (first) {
-        unawaited(native.requestTrackingPermission());
-      }
-      unawaited(startupPermissionsResolved());
+      // Match the iOS permission sequencing used by the reference app. The
+      // notification sheet must finish before ATT is presented, and a short
+      // gap lets UIKit settle the first authorization transition.
+      await _permissionDelay(const Duration(milliseconds: 400));
+      // Keep this outside the first-launch branch. The persisted launch flag
+      // may have been written by a version that did not request ATT yet.
+      // iOS only presents the system prompt while the status is not determined.
+      await native.requestTrackingPermission();
+      await startupPermissionsResolved();
       if (!first) unawaited(_reportStartupGoogle());
       unawaited(reportLocationAndDevice());
     } catch (error) {
@@ -211,7 +223,8 @@ class ReportService {
         snapshot: snapshot,
         location: location ?? await _locationWithFallback(),
         deviceName: snapshot.deviceName,
-        physicalSize: snapshot.screenSize,
+        physicalSize:
+            await deviceMetadataStore?.physicalSize() ?? snapshot.screenSize,
         lastLoginAtMillis: await store.loginAt(),
         nowMillis: _nowMillis(),
         crypto: apiCrypto,
@@ -226,7 +239,8 @@ class ReportService {
     try {
       final token = (await native.getPushToken()).trim();
       if ((!force && _reportedPushTokens.contains(token)) ||
-          !_reportingPushTokens.add(token)) {
+          !_reportingPushTokens.add(token) ||
+          token.isEmpty) {
         return;
       }
       try {

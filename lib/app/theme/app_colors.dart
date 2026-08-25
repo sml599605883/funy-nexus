@@ -26,7 +26,6 @@ abstract final class AppColors {
   static const homeValue = Color.fromRGBO(38, 110, 86, 1);
   static const homeCaption = Color.fromRGBO(68, 93, 80, 1);
   static const homeTermDivider = Color.fromRGBO(194, 222, 212, 1);
-  static const homeCreditProgressPanel = Color.fromRGBO(254, 226, 204, 1);
   static const homeCreditProgressTile = Color.fromRGBO(255, 255, 255, 1);
   static const homeCreditProgressAmount = Color.fromRGBO(51, 51, 51, 1);
   static const homeCreditProgressLabel = Color.fromRGBO(102, 102, 102, 1);
@@ -67,9 +66,14 @@ abstract final class AppColors {
   static const progressMetricLabel = Color.fromRGBO(93, 82, 68, 1);
   static const progressStatus = Color.fromRGBO(234, 70, 60, 1);
   static const progressAction = Color.fromRGBO(255, 221, 111, 1);
+  static const progressGreenMetricSurface = Color.fromRGBO(203, 228, 222, 1);
+  static const progressGreenMetricValue = Color.fromRGBO(38, 110, 86, 1);
+  static const progressGreenMetricLabel = Color.fromRGBO(68, 93, 80, 1);
+  static const progressGreenStatus = Color.fromRGBO(43, 113, 90, 1);
   static const orderActive = Color.fromRGBO(51, 195, 148, 1);
   static const orderInactive = Color.fromRGBO(154, 154, 154, 1);
   static const orderOverdue = Color.fromRGBO(234, 70, 60, 1);
+  static const orderRepayActive = Color.fromRGBO(53, 192, 145, 1);
   static const orderProductText = Color.fromRGBO(60, 60, 60, 1);
   static const orderMetricSurface = Color.fromRGBO(249, 249, 249, 1);
   static const orderMetricLabel = Color.fromRGBO(102, 110, 117, 1);

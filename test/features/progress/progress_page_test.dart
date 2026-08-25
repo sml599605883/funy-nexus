@@ -58,6 +58,53 @@ void main() {
     expect(find.text('Change'), findsOneWidget);
     expect(find.byKey(const Key('progress-action-retry')), findsOneWidget);
     expect(find.byKey(const Key('progress-action-change')), findsOneWidget);
+    expect(find.byKey(const Key('progress-card-background-5')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('progress-card'))),
+      const Size(768, 147),
+    );
+  });
+
+  testWidgets('uses the compact green card for a disbursing order', (
+    tester,
+  ) async {
+    final item = HomeProgressItem.fromJson({
+      'clipsheet': 'order-1',
+      'briarwoods': 'PG Finance',
+      'nightside': HomeProgressState.disbursing,
+    });
+    final cubit = HomeCubit(
+      loadHome: () async => const HomeData(hasSections: true),
+    )..emit(AsyncData(HomeData(hasSections: true, progressItems: [item!])));
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_Harness(cubit: cubit));
+
+    expect(find.byKey(const Key('progress-card-background-4')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('progress-card'))),
+      const Size(768, 125),
+    );
+  });
+
+  testWidgets('uses Repay as the default action for an active loan', (
+    tester,
+  ) async {
+    final item = HomeProgressItem.fromJson({
+      'clipsheet': 'order-1',
+      'modernised': 'product-1',
+      'briarwoods': 'PG Finance',
+      'nightside': HomeProgressState.activeLoan,
+    });
+    final cubit = HomeCubit(
+      loadHome: () async => const HomeData(hasSections: true),
+    )..emit(AsyncData(HomeData(hasSections: true, progressItems: [item!])));
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_Harness(cubit: cubit));
+
+    expect(find.byKey(const Key('progress-action-repay')), findsOneWidget);
+    expect(find.text('Repay'), findsOneWidget);
   });
 
   testWidgets('ignores unknown server progress actions', (tester) async {

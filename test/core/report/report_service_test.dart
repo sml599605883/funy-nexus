@@ -18,13 +18,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test(
-    'requests notification authorization before APNs registration',
+    'requests notification and ATT authorization before APNs registration',
     () async {
       final calls = <String>[];
       final notificationPermission = Completer<void>();
       final sessionStore = SessionStore(_MemorySessionPersistence());
       final client = _client(sessionStore, (_) => _successResponse());
       final store = ReportStore.memory();
+      await store.markAppOpened();
       await store.markAppOpened();
       addTearDown(client.close);
 
@@ -51,6 +52,7 @@ void main() {
         apiCrypto: ApiCrypto(key: '0123456789abcdef', iv: 'abcdef9876543210'),
         store: store,
         native: ReportNativeBridge(channel: channel),
+        permissionDelay: (_) async {},
       );
 
       final started = service.start();
@@ -60,9 +62,14 @@ void main() {
       notificationPermission.complete();
       await started;
       await Future<void>.delayed(Duration.zero);
+      expect(calls, contains('requestTrackingPermission'));
       expect(calls, contains('registerForRemoteNotifications'));
       expect(
         calls.indexOf('requestNotificationPermission'),
+        lessThan(calls.indexOf('registerForRemoteNotifications')),
+      );
+      expect(
+        calls.indexOf('requestTrackingPermission'),
         lessThan(calls.indexOf('registerForRemoteNotifications')),
       );
     },

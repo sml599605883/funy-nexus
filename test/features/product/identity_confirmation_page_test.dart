@@ -117,6 +117,34 @@ void main() {
     expect(find.text('31-05-1995'), findsOneWidget);
   });
 
+  testWidgets('keeps focused identity input above the keyboard', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: IdentityConfirmationPage(
+          productId: 'product-1',
+          identityType: 'PRC',
+          recognizedInfo: _recognizedInfo(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final input = find.byKey(const Key('identityConfirmationIdInput'));
+    tester.widget<TextField>(input).focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(tester.getBottomLeft(input).dy, lessThanOrEqualTo(812 - 300));
+  });
+
   testWidgets('hides back navigation and blocks route popping', (tester) async {
     final gateway = _ConfirmationGateway();
     await tester.binding.setSurfaceSize(const Size(375, 812));

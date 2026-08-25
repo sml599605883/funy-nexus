@@ -11,6 +11,7 @@ import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/report_store.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/identity_selection_page.dart';
+import 'package:fund_nexus/features/product/certification/widgets/certification_retention_guard.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
 
@@ -67,6 +68,52 @@ void main() {
     expect(reporter.sceneType, '2');
     expect(reporter.startedAtSeconds, greaterThanOrEqualTo(pageOpenedAt));
     expect(reporter.startedAtSeconds, lessThan(selectedAt));
+  });
+
+  testWidgets('leaves after one retention request when no popup is returned', (
+    tester,
+  ) async {
+    var retentionRequestCount = 0;
+    CertificationRetentionGuard.presenter =
+        ({
+          required context,
+          required type,
+          required productId,
+          required onExit,
+        }) async {
+          retentionRequestCount += 1;
+          return false;
+        };
+    addTearDown(CertificationRetentionGuard.resetPresenter);
+
+    await tester.pumpWidget(
+      RepositoryProvider<ProductGateway>.value(
+        value: _IdentityGateway(),
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        const IdentitySelectionPage(productId: 'product-1'),
+                  ),
+                );
+              },
+              child: const Text('Open identity selection'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open identity selection'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(IconButton));
+    await tester.pumpAndSettle();
+
+    expect(retentionRequestCount, 1);
+    expect(find.text('Open identity selection'), findsOneWidget);
   });
 }
 

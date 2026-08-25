@@ -290,7 +290,7 @@ class _ProgressContent extends StatelessWidget {
                       onActionTap: (action) =>
                           onActionTap(items[index], action),
                     ),
-                    separatorBuilder: (_, _) => SizedBox(height: context.r(12)),
+                    separatorBuilder: (_, _) => SizedBox(height: context.r(16)),
                   ),
                 ),
             ],
@@ -378,55 +378,69 @@ class _ProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final presentation = _ProgressPresentation.from(item);
     final actions = item.actions.isEmpty ? presentation.actions : item.actions;
+    final compactCard = presentation.cardHeight == 125;
     return SizedBox(
       key: const Key('progress-card'),
-      height: context.r(147),
+      height: context.r(presentation.cardHeight),
       child: DecoratedBox(
+        key: Key('progress-card-background-${item.status}'),
         decoration: BoxDecoration(
-          color: AppColors.progressCardBorder,
-          borderRadius: BorderRadius.circular(context.r(12)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(context.r(12)),
-          child: DecoratedBox(
-            decoration: const BoxDecoration(
-              color: AppColors.progressCardSurface,
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                context.r(8),
-                context.r(4),
-                context.r(8),
-                context.r(5),
-              ),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onTap,
-                    child: Column(
-                      children: [
-                        _ProgressHeader(item: item, presentation: presentation),
-                        SizedBox(height: context.r(12)),
-                        _ProgressMetrics(
-                          item: item,
-                          presentation: presentation,
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: context.r(5)),
-                  Expanded(
-                    child: _ProgressActions(
-                      actions: actions,
-                      presentation: presentation,
-                      onActionTap: onActionTap,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          image: DecorationImage(
+            image: AssetImage(presentation.backgroundAsset),
+            fit: BoxFit.fill,
           ),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                context.r(12),
+                context.r(13),
+                context.r(20),
+                0,
+              ),
+              child: SizedBox(
+                height: context.r(20),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  child: _ProgressHeader(
+                    item: item,
+                    presentation: presentation,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: context.r(12)),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: context.r(20)),
+              child: SizedBox(
+                height: context.r(60),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  child: _ProgressMetrics(
+                    item: item,
+                    presentation: presentation,
+                  ),
+                ),
+              ),
+            ),
+            if (actions.isNotEmpty) ...[
+              SizedBox(height: context.r(compactCard ? 0 : 5)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: context.r(20)),
+                child: SizedBox(
+                  height: context.r(compactCard ? 20 : 24),
+                  child: _ProgressActions(
+                    actions: actions,
+                    presentation: presentation,
+                    onActionTap: onActionTap,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -441,7 +455,7 @@ class _ProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: context.r(17),
+    height: context.r(20),
     child: Row(
       children: [
         if (item.productLogo.isNotEmpty) ...[
@@ -496,7 +510,7 @@ class _ProgressMetrics extends StatelessWidget {
     height: context.r(60),
     child: DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.progressMetricSurface,
+        color: presentation.metricSurface,
         borderRadius: BorderRadius.circular(context.r(4)),
       ),
       child: Row(
@@ -507,6 +521,8 @@ class _ProgressMetrics extends StatelessWidget {
               label: item.amountLabel.isEmpty
                   ? presentation.amountLabel
                   : item.amountLabel,
+              valueColor: presentation.metricValue,
+              labelColor: presentation.metricLabel,
             ),
           ),
           Container(
@@ -520,6 +536,8 @@ class _ProgressMetrics extends StatelessWidget {
               label: item.dateLabel.isEmpty
                   ? presentation.dateLabel
                   : item.dateLabel,
+              valueColor: presentation.metricValue,
+              labelColor: presentation.metricLabel,
             ),
           ),
         ],
@@ -529,10 +547,17 @@ class _ProgressMetrics extends StatelessWidget {
 }
 
 class _ProgressMetric extends StatelessWidget {
-  const _ProgressMetric({required this.value, required this.label});
+  const _ProgressMetric({
+    required this.value,
+    required this.label,
+    required this.valueColor,
+    required this.labelColor,
+  });
 
   final String value;
   final String label;
+  final Color valueColor;
+  final Color labelColor;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -544,7 +569,7 @@ class _ProgressMetric extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: AppColors.progressMetricValue,
+            color: valueColor,
             fontSize: context.r(14),
             fontWeight: FontWeight.w700,
             height: 17 / 14,
@@ -556,7 +581,7 @@ class _ProgressMetric extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: AppColors.progressMetricLabel,
+            color: labelColor,
             fontSize: context.r(10),
             height: 14 / 10,
           ),
@@ -581,25 +606,27 @@ class _ProgressActions extends StatelessWidget {
   Widget build(BuildContext context) {
     if (actions.isEmpty) return const SizedBox.shrink();
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: actions
           .map((action) {
             final isHighlighted = action.type == 'retry';
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.r(12)),
+            return Expanded(
               child: GestureDetector(
                 key: Key('progress-action-${action.type}'),
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onActionTap(action),
-                child: Text(
-                  action.label,
-                  style: TextStyle(
-                    color: isHighlighted
-                        ? AppColors.progressAction
-                        : presentation.statusColor,
-                    fontSize: context.r(14),
-                    fontWeight: FontWeight.w700,
-                    height: 20 / 14,
+                child: Center(
+                  child: Text(
+                    action.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isHighlighted
+                          ? AppColors.progressAction
+                          : presentation.statusColor,
+                      fontSize: context.r(14),
+                      fontWeight: FontWeight.w700,
+                      height: 20 / 14,
+                    ),
                   ),
                 ),
               ),
@@ -616,6 +643,11 @@ class _ProgressPresentation {
     required this.amountLabel,
     required this.dateLabel,
     required this.statusColor,
+    required this.backgroundAsset,
+    required this.cardHeight,
+    required this.metricSurface,
+    required this.metricValue,
+    required this.metricLabel,
     this.actions = const [],
   });
 
@@ -623,6 +655,11 @@ class _ProgressPresentation {
   final String amountLabel;
   final String dateLabel;
   final Color statusColor;
+  final String backgroundAsset;
+  final double cardHeight;
+  final Color metricSurface;
+  final Color metricValue;
+  final Color metricLabel;
   final List<HomeProgressAction> actions;
 
   factory _ProgressPresentation.from(HomeProgressItem item) {
@@ -639,14 +676,24 @@ class _ProgressPresentation {
           amountLabel: 'Repayment',
           dateLabel: 'Repayment Date',
           statusColor: AppColors.progressStatus,
-          actions: _changeAction,
+          backgroundAsset: AppAssets.progressCardYellow,
+          cardHeight: 147,
+          metricSurface: AppColors.progressMetricSurface,
+          metricValue: AppColors.progressMetricValue,
+          metricLabel: AppColors.progressMetricLabel,
+          actions: _repayAction,
         );
       case HomeProgressState.disbursing:
         return _ProgressPresentation(
           label: serverLabel.isEmpty ? 'Disbursing' : serverLabel,
           amountLabel: 'Loan Amount',
           dateLabel: 'Loan Date',
-          statusColor: AppColors.homeValue,
+          statusColor: AppColors.progressGreenStatus,
+          backgroundAsset: AppAssets.progressCardGreen,
+          cardHeight: 125,
+          metricSurface: AppColors.progressGreenMetricSurface,
+          metricValue: AppColors.progressGreenMetricValue,
+          metricLabel: AppColors.progressGreenMetricLabel,
         );
       case HomeProgressState.disbursementFailed:
       case HomeProgressState.disbursementFailedAlternative:
@@ -655,6 +702,11 @@ class _ProgressPresentation {
           amountLabel: 'Loan Amount',
           dateLabel: 'Loan Date',
           statusColor: AppColors.progressStatus,
+          backgroundAsset: AppAssets.progressCardYellow,
+          cardHeight: 147,
+          metricSurface: AppColors.progressMetricSurface,
+          metricValue: AppColors.progressMetricValue,
+          metricLabel: AppColors.progressMetricLabel,
           actions: _failedActions,
         );
       case HomeProgressState.inReview:
@@ -663,16 +715,21 @@ class _ProgressPresentation {
           label: serverLabel.isEmpty ? 'In Review' : serverLabel,
           amountLabel: 'Loan Amount',
           dateLabel: 'Loan Date',
-          statusColor: AppColors.homeValue,
+          statusColor: AppColors.progressGreenStatus,
+          backgroundAsset: AppAssets.progressCardGreen,
+          cardHeight: 125,
+          metricSurface: AppColors.progressGreenMetricSurface,
+          metricValue: AppColors.progressGreenMetricValue,
+          metricLabel: AppColors.progressGreenMetricLabel,
         );
     }
   }
 
-  static const _changeAction = [
+  static const _repayAction = [
     HomeProgressAction(
-      type: 'change',
+      type: 'repay',
       visible: true,
-      label: 'Change',
+      label: 'Repay',
       badge: '',
       target: '',
     ),

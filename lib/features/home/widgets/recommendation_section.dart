@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
+import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 
@@ -17,25 +18,13 @@ class RecommendationSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: context.r(14),
-              height: context.r(14),
-              decoration: const BoxDecoration(
-                color: AppColors.homeRecommendationStripStart,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Container(
-                  width: context.r(8),
-                  height: context.r(8),
-                  decoration: const BoxDecoration(
-                    color: AppColors.homeValue,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
+            Image.asset(
+              AppAssets.mineSectionTitleMarker,
+              key: const Key('home-recommendation-title-marker'),
+              width: context.r(22),
+              height: context.r(22),
             ),
-            SizedBox(width: context.r(8)),
+            SizedBox(width: context.r(4)),
             Text(
               'Recommendation',
               style: TextStyle(

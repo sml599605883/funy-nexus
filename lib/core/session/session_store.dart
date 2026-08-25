@@ -1,4 +1,3 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract interface class SessionPersistence {
@@ -12,23 +11,19 @@ abstract interface class SessionPersistence {
 }
 
 class PersistentSessionPersistence implements SessionPersistence {
-  PersistentSessionPersistence({
-    SharedPreferencesAsync? preferences,
-    FlutterSecureStorage? secureStorage,
-  }) : _preferences = preferences ?? SharedPreferencesAsync(),
-       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  PersistentSessionPersistence({SharedPreferencesAsync? preferences})
+    : _preferences = preferences ?? SharedPreferencesAsync();
 
   static const phoneKey = 'fund_nexus.session.phone';
   static const sessionIdKey = 'fund_nexus.session.id';
 
   final SharedPreferencesAsync _preferences;
-  final FlutterSecureStorage _secureStorage;
 
   @override
   Future<String?> readPhone() => _preferences.getString(phoneKey);
 
   @override
-  Future<String?> readSessionId() => _secureStorage.read(key: sessionIdKey);
+  Future<String?> readSessionId() => _preferences.getString(sessionIdKey);
 
   @override
   Future<void> writePhone(String? phone) async {
@@ -42,10 +37,10 @@ class PersistentSessionPersistence implements SessionPersistence {
   @override
   Future<void> writeSessionId(String? sessionId) async {
     if (sessionId == null) {
-      await _secureStorage.delete(key: sessionIdKey);
+      await _preferences.remove(sessionIdKey);
       return;
     }
-    await _secureStorage.write(key: sessionIdKey, value: sessionId);
+    await _preferences.setString(sessionIdKey, sessionId);
   }
 }
 

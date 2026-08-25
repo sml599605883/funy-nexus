@@ -54,6 +54,15 @@ class FaceVerificationPage extends StatefulWidget {
 
 class _FaceVerificationPageState extends State<FaceVerificationPage> {
   bool _isSubmitting = false;
+  bool _isLeaving = false;
+
+  void _completeDefaultBack() {
+    if (!mounted || _isLeaving) return;
+    setState(() => _isLeaving = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,12 +73,12 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
       context: context,
       type: '1',
       productId: widget.productId,
-      onDefaultBack: () => Navigator.of(context).maybePop(),
+      onDefaultBack: _completeDefaultBack,
     );
     return PopScope(
-      canPop: false,
+      canPop: _isLeaving,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !_isSubmitting) onBack();
+        if (!didPop && !_isSubmitting && !_isLeaving) onBack();
       },
       child: Scaffold(
         extendBody: true,
@@ -82,7 +91,7 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
                 children: [
                   CertificationPageHeader(
                     title: 'Face verification',
-                    onBack: onBack,
+                    onBack: _isLeaving ? null : onBack,
                   ),
                   Expanded(
                     child: SingleChildScrollView(
