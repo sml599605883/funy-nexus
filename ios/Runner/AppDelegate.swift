@@ -218,29 +218,52 @@ private final class FaceLivenessBridge {
       license,
       TDLivenessShowStylePresent,
       { payload in
-        NSLog("[FaceLiveness] liveness succeeded")
-        result(self.wrap(success: true, payload: payload))
+        NSLog("[FaceLiveness] session callback received")
+        result(LivenessOutcome(payload).flattened)
       },
       { payload in
-        NSLog("[FaceLiveness] liveness failed")
-        result(self.wrap(success: false, payload: payload))
+        NSLog("[FaceLiveness] session callback received")
+        result(LivenessOutcome(payload).flattened)
       }
     )
   }
 
-  private func wrap(
-    success: Bool,
-    payload: [AnyHashable: Any]?
-  ) -> [String: Any] {
-    let raw = (payload as? [String: Any]) ?? [:]
-    let code = (raw["code"] as? NSNumber)?.intValue ?? (success ? 0 : -1)
-    return [
-      "success": success,
-      "code": code,
-      "message": raw["message"] as? String ?? "",
-      "image": raw["image"] as? String ?? "",
-      "liveness_id": raw["liveness_id"] as? String ?? ""
-    ]
+  /// Normalised view of a TrustDecision liveness callback. The SDK invokes the
+  /// "success" block for some non-zero business errors, so the verdict is keyed
+  /// off the numeric result code rather than which closure fired.
+  private struct LivenessOutcome {
+    private static let passingCodes: Set<Int> = [0]
+
+    private let code: Int
+    private let message: String
+    private let image: String
+    private let livenessId: String
+
+    init(_ payload: [AnyHashable: Any]?) {
+      let fields = (payload as? [String: Any]) ?? [:]
+      code = Self.numericCode(fields["code"])
+      message = fields["message"] as? String ?? ""
+      image = fields["image"] as? String ?? ""
+      livenessId = fields["liveness_id"] as? String ?? ""
+    }
+
+    var flattened: [String: Any] {
+      [
+        "success": Self.passingCodes.contains(code),
+        "code": code,
+        "message": message,
+        "image": image,
+        "liveness_id": livenessId,
+      ]
+    }
+
+    private static func numericCode(_ value: Any?) -> Int {
+      switch value {
+      case let number as NSNumber: return number.intValue
+      case let text as String: return Int(text) ?? -1
+      default: return -1
+      }
+    }
   }
 
   private func failure(message: String) -> [String: Any] {
