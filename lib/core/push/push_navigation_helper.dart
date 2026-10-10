@@ -10,6 +10,7 @@ import '../../features/product/credit_review/credit_review_page.dart';
 import '../../features/product/web/product_web_page.dart';
 import '../../features/product/data/product_repository.dart';
 import '../../core/network/api_exception.dart';
+import '../permissions/location_prompt_dialog.dart';
 import '../../core/report/report_service.dart';
 import 'ios_notification_route_coordinator.dart';
 import 'push_deep_link.dart';
@@ -192,12 +193,12 @@ class PushNavigationHelper {
     try {
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
-          builder: (_) => OrderListPage(
-            initialStatus: initialStatus,
-          ),
+          builder: (_) => OrderListPage(initialStatus: initialStatus),
         ),
       );
-      logger('Order list opened with status: ${initialStatus.code} (${initialStatus.label})');
+      logger(
+        'Order list opened with status: ${initialStatus.code} (${initialStatus.label})',
+      );
     } catch (error) {
       logger('Failed to open order list: $error');
     }
@@ -295,8 +296,8 @@ class PushNavigationHelper {
         showLoading: () => EasyLoading.show(status: 'Loading...'),
         dismissLoading: () => EasyLoading.dismiss(animation: false),
         showMessage: (message) => _showMessage(message),
-        showLocationSettingsPrompt: (message) =>
-            _showLocationSettingsPrompt(context, message),
+        showLocationSettingsPrompt: (prompt) =>
+            showLocationPromptDialog(context, prompt),
       );
       logger('Product application flow completed for productId: $productId');
     } catch (error) {
@@ -305,7 +306,10 @@ class PushNavigationHelper {
     }
   }
 
-  static Future<void> _openWebTarget(BuildContext context, String target) async {
+  static Future<void> _openWebTarget(
+    BuildContext context,
+    String target,
+  ) async {
     if (ProductWebPage.validUri(target) == null) {
       await _showMessage('Unable to open the requested page.');
       return;
@@ -316,36 +320,7 @@ class PushNavigationHelper {
     );
   }
 
-  static Future<bool> _showLocationSettingsPrompt(
-    BuildContext context,
-    String message,
-  ) async {
-    if (!context.mounted) return false;
-    return await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Allow Location Access'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Settings'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
   static Future<void> _showMessage(String message) async {
-    await EasyLoading.showToast(
-      message,
-      duration: const Duration(seconds: 2),
-    );
+    await EasyLoading.showToast(message, duration: const Duration(seconds: 2));
   }
 }

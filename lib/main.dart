@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/app.dart';
 import 'package:fund_nexus/app/startup/startup_network_gate.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
@@ -18,6 +19,13 @@ import 'package:fund_nexus/core/report/report_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // EasyLoading defaults to a non-blocking mask, which lets users tap the UI
+  // underneath while a request is in flight. Block input for the whole
+  // overlay so a loading state can never trigger a second action.
+  EasyLoading.instance
+    ..maskType = EasyLoadingMaskType.clear
+    ..dismissOnTap = false;
 
   // Configure and start notification routing with custom navigation handler
   IosNotificationRouteCoordinator.configure(

@@ -109,7 +109,7 @@ class LoanHero extends StatelessWidget {
                   ),
                   SizedBox(height: context.r(28)),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: context.r(16)),
+                    padding: EdgeInsets.symmetric(horizontal: context.r(26)),
                     child: SizedBox(
                       height: context.r(17),
                       child: FittedBox(

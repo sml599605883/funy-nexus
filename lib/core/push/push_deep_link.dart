@@ -95,6 +95,11 @@ class PushDeepLinkParser {
   static const _host = 'fund-nexus';
   static const _platform = 'ios';
 
+  /// Whether [uri] targets this app through its own URL scheme
+  /// (e.g. `ph://fund-nexus/ios/PageName`).
+  static bool isAppDeepLink(Uri uri) =>
+      uri.scheme == _scheme && uri.host == _host;
+
   PushDeepLink parse(String rawTarget, {Object? arguments}) {
     final target = rawTarget.trim();
     if (target.isEmpty) {
@@ -204,8 +209,7 @@ class PushDeepLinkParser {
   }
 
   bool _isAppScheme(Uri uri) {
-    return uri.scheme == _scheme &&
-        uri.host == _host &&
+    return isAppDeepLink(uri) &&
         uri.pathSegments.isNotEmpty &&
         uri.pathSegments.first == _platform;
   }

@@ -8,8 +8,13 @@ import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/main_shell/main_shell_page.dart';
 import 'package:fund_nexus/features/main_shell/state/main_tab_cubit.dart';
+import 'package:fund_nexus/features/product/data/product_application_data.dart';
+import 'package:fund_nexus/features/product/data/product_repository.dart';
+import 'package:fund_nexus/features/product/state/credit_review_polling_coordinator.dart';
 import 'package:fund_nexus/core/json/json.dart';
 import 'package:fund_nexus/core/network/api_response.dart';
+
+import 'support/product_gateway_fakes.dart';
 
 void main() {
   testWidgets('starts on Home and exposes three tabs', (tester) async {
@@ -253,6 +258,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(homeRequestCount, 4);
   });
+
+  testWidgets('credit approval reported off-page reloads Home data', (
+    tester,
+  ) async {
+    var homeRequestCount = 0;
+    final gateway = _ApprovalGateway();
+    final coordinator = CreditReviewPollingCoordinator(
+      gateway: gateway,
+      interval: const Duration(milliseconds: 5),
+    );
+    addTearDown(coordinator.stop);
+    await tester.pumpWidget(
+      _testShell(
+        authenticated: true,
+        coordinator: coordinator,
+        homeLoader: () async {
+          homeRequestCount++;
+          return const HomeData(hasSections: true);
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loadsBeforeApproval = homeRequestCount;
+
+    coordinator.start('product-1');
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
+
+    expect(gateway.calls, greaterThanOrEqualTo(2));
+    expect(coordinator.isRunning, isFalse);
+    expect(homeRequestCount, greaterThan(loadsBeforeApproval));
+  });
 }
 
 Widget _testShell({
@@ -261,26 +298,32 @@ Widget _testShell({
   HomeLoader? homeLoader,
   PopupLoader? popupLoader,
   WidgetBuilder? loginPageBuilder,
+  CreditReviewPollingCoordinator? coordinator,
   _TestSessionStore? session,
 }) {
   return RepositoryProvider<SessionStore>.value(
     value: session ?? _TestSessionStore(authenticated: authenticated),
-    child: MaterialApp(
-      theme: AppTheme.light,
-      navigatorObservers: [appRouteObserver],
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: tabs ?? MainTabCubit()),
-          BlocProvider(
-            create: (_) => HomeCubit(
-              loadHome:
-                  homeLoader ?? () async => const HomeData(hasSections: true),
-            )..load(),
+    child: RepositoryProvider<CreditReviewPollingCoordinator>.value(
+      value:
+          coordinator ??
+          CreditReviewPollingCoordinator(gateway: StubProductGateway()),
+      child: MaterialApp(
+        theme: AppTheme.light,
+        navigatorObservers: [appRouteObserver],
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: tabs ?? MainTabCubit()),
+            BlocProvider(
+              create: (_) => HomeCubit(
+                loadHome:
+                    homeLoader ?? () async => const HomeData(hasSections: true),
+              )..load(),
+            ),
+          ],
+          child: MainShellPage(
+            loginPageBuilder: loginPageBuilder,
+            popupLoader: popupLoader,
           ),
-        ],
-        child: MainShellPage(
-          loginPageBuilder: loginPageBuilder,
-          popupLoader: popupLoader,
         ),
       ),
     ),
@@ -322,4 +365,19 @@ class _MemoryPersistence implements SessionPersistence {
 
   @override
   Future<void> writeSessionId(String? sessionId) async {}
+}
+
+class _ApprovalGateway implements ProductGateway {
+  int calls = 0;
+
+  @override
+  Future<CreditReviewData> fetchCreditReview() async {
+    final approved = calls > 0;
+    calls++;
+    return CreditReviewData(isApproved: approved);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }

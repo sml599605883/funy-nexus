@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
@@ -34,9 +35,7 @@ class LoginPage extends StatelessWidget {
         sessionStore: context.read<SessionStore>(),
         showMessage: (message) async {
           if (!context.mounted) return;
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(message)));
+          await EasyLoading.showToast(message);
         },
         onLoginSuccess:
             onLoginSuccess ??

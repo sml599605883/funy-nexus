@@ -8,12 +8,16 @@ class MineMenuItem extends StatelessWidget {
     required this.iconAsset,
     required this.label,
     this.onTap,
+    this.trailingLabel,
+    this.showChevron = true,
     super.key,
   });
 
   final String iconAsset;
   final String label;
   final VoidCallback? onTap;
+  final String? trailingLabel;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +52,23 @@ class MineMenuItem extends StatelessWidget {
                   ),
                 ),
               ),
-              Image.asset(
-                AppAssets.mineChevron,
-                width: context.r(6),
-                height: context.r(10),
-              ),
+              if (trailingLabel != null) ...[
+                Text(
+                  trailingLabel!,
+                  style: TextStyle(
+                    color: AppColors.mineItemValue,
+                    fontSize: context.r(12),
+                    height: 17 / 12,
+                  ),
+                ),
+                SizedBox(width: context.r(8)),
+              ],
+              if (showChevron)
+                Image.asset(
+                  AppAssets.mineChevron,
+                  width: context.r(6),
+                  height: context.r(10),
+                ),
             ],
           ),
         ),

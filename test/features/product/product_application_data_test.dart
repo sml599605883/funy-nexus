@@ -20,9 +20,16 @@ void main() {
     expect(
       ProductAdmissionData.fromJson({
         'trokes': 302,
-        'redepositing': 'gold://pocket/recredit',
+        'redepositing': 'ph://fund-nexus/ios/MagnetiseRewrap?modernised=1',
       }).disposition,
       ProductAdmissionDisposition.creditReview,
+    );
+    expect(
+      ProductAdmissionData.fromJson({
+        'trokes': 200,
+        'redepositing': 'ph://fund-nexus/ios/Bullied?modernised=1',
+      }).disposition,
+      ProductAdmissionDisposition.detail,
     );
     expect(
       ProductAdmissionData.fromJson({

@@ -103,4 +103,26 @@ void main() {
       expect(link.productId, '333');
     });
   });
+
+  group('PushDeepLinkParser.isAppDeepLink', () {
+    test('matches the app scheme and host', () {
+      expect(
+        PushDeepLinkParser.isAppDeepLink(
+          Uri.parse('ph://fund-nexus/ios/Home'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('rejects other schemes and hosts', () {
+      expect(
+        PushDeepLinkParser.isAppDeepLink(Uri.parse('https://example.com')),
+        isFalse,
+      );
+      expect(
+        PushDeepLinkParser.isAppDeepLink(Uri.parse('ph://other-host/ios/Home')),
+        isFalse,
+      );
+    });
+  });
 }

@@ -10,12 +10,16 @@ class MineBody extends StatelessWidget {
     required this.onAccountTap,
     this.onCustomerService,
     this.onPrivacyPolicy,
+    this.onWebsiteTap,
+    this.appVersion,
     super.key,
   });
 
   final VoidCallback onAccountTap;
   final VoidCallback? onCustomerService;
   final VoidCallback? onPrivacyPolicy;
+  final VoidCallback? onWebsiteTap;
+  final String? appVersion;
 
   @override
   Widget build(BuildContext context) {
@@ -47,16 +51,19 @@ class MineBody extends StatelessWidget {
             SizedBox(height: context.r(16)),
             const MineSectionTitle(label: 'About Us'),
             SizedBox(height: context.r(12)),
-            const MineMenuItem(
-              key: Key('mine-website'),
+            MineMenuItem(
+              key: const Key('mine-website'),
               iconAsset: AppAssets.mineWebsite,
               label: 'Website',
+              onTap: onWebsiteTap,
             ),
             SizedBox(height: context.r(8)),
-            const MineMenuItem(
-              key: Key('mine-app-version'),
+            MineMenuItem(
+              key: const Key('mine-app-version'),
               iconAsset: AppAssets.mineAppVersion,
               label: 'APP Version',
+              trailingLabel: appVersion == null ? null : 'v$appVersion',
+              showChevron: false,
             ),
             SizedBox(height: context.r(8)),
             MineMenuItem(

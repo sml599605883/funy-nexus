@@ -1,4 +1,5 @@
 import 'package:fund_nexus/core/json/json.dart';
+import 'package:fund_nexus/core/push/push_deep_link.dart';
 
 Uri? productWebUri(String value) {
   final uri = Uri.tryParse(value.trim());
@@ -40,12 +41,8 @@ class ProductAdmissionData {
   }
 
   static bool _isCreditReviewTarget(String value) {
-    final uri = Uri.tryParse(value);
-    return uri != null &&
-        uri.scheme == 'gold' &&
-        uri.host == 'pocket' &&
-        uri.pathSegments.length == 1 &&
-        uri.pathSegments.single == 'recredit';
+    return const PushDeepLinkParser().parse(value).kind ==
+        PushDeepLinkKind.creditReview;
   }
 }
 

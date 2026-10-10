@@ -85,6 +85,24 @@ void main() {
     });
   });
 
+  test('posts the documented banner click contract', () async {
+    late RequestOptions capturedRequest;
+    final client = _client(sessionStore, (request) {
+      capturedRequest = request;
+      return _successResponse(const <String, Object?>{});
+    });
+    addTearDown(client.close);
+
+    await client.uploadBannerClick(bannerConfigId: ' banner-42 ');
+
+    expect(capturedRequest.method, 'POST');
+    expect(capturedRequest.path, '/viler/deucedly');
+    expect(capturedRequest.data, {
+      'heatproof': 'banner-42',
+      'outpreen': hasLength(6),
+    });
+  });
+
   test('gets the documented Home/Mine popup contract', () async {
     late RequestOptions capturedRequest;
     final client = _client(sessionStore, (request) {

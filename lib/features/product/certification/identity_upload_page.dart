@@ -166,22 +166,21 @@ class _IdentityUploadPageState extends State<IdentityUploadPage> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Allow Camera Access'),
+        title: const Text('Verification Paused'),
         content: const Text(
-          "We can't complete identity verification without camera access. "
-          'Enable the permission to continue your application securely.',
+          'Camera access is required to capture your clear ID photo and complete your verification flow. Please grant permission in Settings.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Maybe Later'),
           ),
           TextButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               await openAppSettings();
             },
-            child: const Text('Settings'),
+            child: const Text('Turn On'),
           ),
         ],
       ),

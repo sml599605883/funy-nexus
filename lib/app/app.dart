@@ -17,6 +17,7 @@ import 'package:fund_nexus/features/home/state/home_cubit.dart';
 import 'package:fund_nexus/features/main_shell/main_shell_page.dart';
 import 'package:fund_nexus/features/main_shell/state/main_tab_cubit.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
+import 'package:fund_nexus/features/product/state/credit_review_polling_coordinator.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 
 class FundNexusApp extends StatelessWidget {
@@ -84,6 +85,11 @@ class FundNexusApp extends StatelessWidget {
             sessionStore: sessionStore,
             permissions: context.read<PermissionCoordinator>(),
             reportService: reporter,
+          ),
+        ),
+        RepositoryProvider(
+          create: (context) => CreditReviewPollingCoordinator(
+            gateway: context.read<ProductGateway>(),
           ),
         ),
       ],

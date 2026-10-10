@@ -13,6 +13,7 @@ import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/risk_report_scene.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/features/product/certification/bind_card_field_state.dart';
+import 'package:fund_nexus/features/product/certification/face_token_handler.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_progress.dart';
@@ -614,7 +615,9 @@ class _BindCardPageState extends State<BindCardPage> {
       );
       if (result.code == '20000') {
         await EasyLoading.dismiss();
-        result = await _completeLiveness(group, fields);
+        final livenessResult = await _completeLiveness(group, fields);
+        if (livenessResult == null) return;
+        result = livenessResult;
       }
       await EasyLoading.dismiss();
       if (!mounted) return;
@@ -667,7 +670,7 @@ class _BindCardPageState extends State<BindCardPage> {
     }
   }
 
-  Future<BindCardSubmitResult> _completeLiveness(
+  Future<BindCardSubmitResult?> _completeLiveness(
     BindCardGroup group,
     Map<String, String> fields,
   ) async {
@@ -678,9 +681,8 @@ class _BindCardPageState extends State<BindCardPage> {
     final permission = await permissions.requestCamera();
     if (permission != PermissionStatus.granted &&
         permission != PermissionStatus.limited) {
-      throw const _BindCardFailure(
-        'Camera access is required for verification.',
-      );
+      if (mounted) await _showPermissionDialog();
+      return null;
     }
     final orderNumber = widget.orderNumber.trim();
     if (orderNumber.isEmpty) {
@@ -690,7 +692,15 @@ class _BindCardPageState extends State<BindCardPage> {
       orderNumber: orderNumber,
       type: '1',
     );
-    if (token.resultCode != '200' || token.license.isEmpty) {
+    if (!mounted) return null;
+    if (!await handleFaceTokenResponse(
+      context,
+      token: token,
+      productId: widget.productId,
+    )) {
+      return null;
+    }
+    if (token.license.isEmpty) {
       throw _BindCardFailure(
         token.errorMessage.isEmpty
             ? 'Unable to start liveness verification.'
@@ -706,7 +716,9 @@ class _BindCardPageState extends State<BindCardPage> {
         await (widget.launchLiveness ?? FaceLivenessBridge.instance.start)(
           token.license,
         );
-    if (!liveness.success || liveness.livenessId.trim().isEmpty) {
+    // 同盾活体只要回调带回 liveness_id 即视为识别成功并继续提交，
+    // 不再依据返回码推导的 success 判定，避免 code 判定偏差导致活体结果未被提交。
+    if (liveness.livenessId.trim().isEmpty) {
       throw _BindCardFailure(
         liveness.message.isEmpty
             ? 'Liveness verification was not completed.'
@@ -721,6 +733,31 @@ class _BindCardPageState extends State<BindCardPage> {
         type: '7',
         livenessId: liveness.livenessId.trim(),
         license: token.license,
+      ),
+    );
+  }
+
+  Future<void> _showPermissionDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Verification Paused'),
+        content: const Text(
+          'Camera access is required to capture your clear ID photo and complete your verification flow. Please grant permission in Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Maybe Later'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await openAppSettings();
+            },
+            child: const Text('Turn On'),
+          ),
+        ],
       ),
     );
   }

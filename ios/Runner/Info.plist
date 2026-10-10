@@ -32,11 +32,13 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow camera access only when you choose to capture an identity document for verification.</string>
+	<string>We use your camera to help you snap clear ID photos and complete a quick liveness check as part of our identity verification flow.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Your location is used during credit assessment to confirm your identity and ensure safe, authorized account access.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Location is used only during an application step to verify your request and help prevent fraud.</string>
+	<string>Your location is used during credit assessment to confirm your identity and ensure safe, authorized account access.</string>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>Tracking helps measure campaign performance and prevent fraud.</string>
+	<string>Allow tracking to strengthen account security, detect potential risks, and provide content and services that better match your needs.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -67,15 +69,13 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 </dict>
 </plist>

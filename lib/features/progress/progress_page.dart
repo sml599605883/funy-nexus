@@ -6,6 +6,7 @@ import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
+import 'package:fund_nexus/core/permissions/location_prompt_dialog.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/state/async_state.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
@@ -118,7 +119,7 @@ class _ProgressPageState extends State<ProgressPage> {
       await _openProgressTarget(target);
     } catch (error) {
       if (loadingVisible) await EasyLoading.dismiss(animation: false);
-      if (mounted) _showProgressMessage(_messageFor(error));
+      if (mounted) await _showProgressMessage(_messageFor(error));
     } finally {
       _actionRequesting = false;
     }
@@ -144,7 +145,7 @@ class _ProgressPageState extends State<ProgressPage> {
       );
     } catch (error) {
       if (loadingVisible) await EasyLoading.dismiss(animation: false);
-      if (mounted) _showProgressMessage(_messageFor(error));
+      if (mounted) await _showProgressMessage(_messageFor(error));
     } finally {
       _actionRequesting = false;
     }
@@ -206,15 +207,15 @@ class _ProgressPageState extends State<ProgressPage> {
       },
       showLoading: () => EasyLoading.show(status: 'Loading...'),
       dismissLoading: () => EasyLoading.dismiss(animation: false),
-      showMessage: (message) async => _showProgressMessage(message),
+      showMessage: _showProgressMessage,
+      showLocationSettingsPrompt: (prompt) =>
+          showLocationPromptDialog(context, prompt),
     );
   }
 
-  void _showProgressMessage(String message) {
+  Future<void> _showProgressMessage(String message) async {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    await EasyLoading.showError(message);
   }
 
   String _messageFor(Object error) =>

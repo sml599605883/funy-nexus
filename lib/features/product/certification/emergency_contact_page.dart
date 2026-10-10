@@ -603,11 +603,7 @@ class _EmergencyContactContinuationState
       showLoading: () => EasyLoading.show(status: 'Loading...'),
       dismissLoading: EasyLoading.dismiss,
       showMessage: (message) async {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        }
+        if (mounted) await EasyLoading.showError(message);
       },
     );
   }

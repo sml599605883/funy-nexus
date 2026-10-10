@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
+import 'package:fund_nexus/app/navigation/app_route_observer.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/features/product/certification/certification_handoff_page.dart';
-import 'package:fund_nexus/features/product/data/product_repository.dart';
+import 'package:fund_nexus/features/product/state/credit_review_polling_coordinator.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
 
@@ -21,68 +22,90 @@ class CreditReviewPage extends StatefulWidget {
   State<CreditReviewPage> createState() => _CreditReviewPageState();
 }
 
-class _CreditReviewPageState extends State<CreditReviewPage> {
-  static const _pollInterval = Duration(seconds: 10);
+class _CreditReviewPageState extends State<CreditReviewPage> with RouteAware {
   static final Random _random = Random();
 
-  Timer? _timer;
   Timer? _progressTimer;
-  var _finished = false;
-  var _pollInFlight = false;
   var _progress = 0;
+  var _started = false;
+  PageRoute<dynamic>? _route;
+  CreditReviewPollingCoordinator? _coordinator;
 
   @override
   void initState() {
     super.initState();
     _scheduleProgressUpdate();
-    _checkCredit();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic> && !identical(route, _route)) {
+      if (_route != null) {
+        appRouteObserver.unsubscribe(this);
+      }
+      _route = route;
+      appRouteObserver.subscribe(this, route);
+    }
+    if (_started) return;
+    _started = true;
+    final coordinator = context.read<CreditReviewPollingCoordinator>();
+    _coordinator = coordinator;
+    coordinator
+      ..attachForegroundHandler(_resumeAdmission)
+      ..start(widget.productId);
+  }
+
+  @override
+  void didPushNext() {
+    _coordinator?.detachForegroundHandler(_resumeAdmission);
+  }
+
+  @override
+  void didPopNext() {
+    final coordinator = _coordinator;
+    if (coordinator == null) return;
+    coordinator.attachForegroundHandler(_resumeAdmission);
+    if (!coordinator.isRunning) {
+      coordinator.start(widget.productId);
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _progressTimer?.cancel();
+    appRouteObserver.unsubscribe(this);
+    _coordinator?.detachForegroundHandler(_resumeAdmission);
     super.dispose();
   }
 
-  Future<void> _checkCredit() async {
-    if (_finished || _pollInFlight) return;
-    _pollInFlight = true;
-    try {
-      final review = await context.read<ProductGateway>().fetchCreditReview();
-      if (!mounted || _finished) return;
-      if (review.isApproved) {
-        _finished = true;
-        await context.read<ProductApplicationFlow>().resumeAfterCreditReview(
-          productId: widget.productId,
-          openTarget: _openTarget,
-          openCreditReview: _resumeReview,
-          openCertification: _openCertification,
-          showLoading: () => EasyLoading.show(status: 'Loading...'),
-          dismissLoading: () => EasyLoading.dismiss(animation: false),
-          showMessage: _showMessage,
-        );
-        return;
-      }
-    } catch (_) {
-      // A transient polling failure retries on the next scheduled attempt.
-    } finally {
-      _pollInFlight = false;
-    }
-    if (!mounted || _finished) return;
-    _timer?.cancel();
-    _scheduleNextCheck();
+  Future<void> _resumeAdmission(String productId) {
+    return context.read<ProductApplicationFlow>().resumeAfterCreditReview(
+      productId: productId,
+      openTarget: _openTarget,
+      openCreditReview: _continueAfterApproval,
+      openCertification: _openCertification,
+      showLoading: () => EasyLoading.show(status: 'Loading...'),
+      dismissLoading: () => EasyLoading.dismiss(animation: false),
+      showMessage: _showMessage,
+    );
   }
 
-  Future<void> _resumeReview(String _) async {
+  // The review is already approved when this runs, so an admission response
+  // that still points at the review page means the backend has not caught up.
+  // Continue with the product detail instead of polling again, which would be
+  // approved instantly and spin without ever leaving this page.
+  Future<void> _continueAfterApproval(String _) async {
     if (!mounted) return;
-    _finished = false;
-    _scheduleNextCheck();
-  }
-
-  void _scheduleNextCheck() {
-    _timer?.cancel();
-    _timer = Timer(_pollInterval, _checkCredit);
+    await context.read<ProductApplicationFlow>().resumeAfterCertification(
+      productId: widget.productId,
+      openTarget: _openTarget,
+      openCertification: _openCertification,
+      showLoading: () => EasyLoading.show(status: 'Loading...'),
+      dismissLoading: () => EasyLoading.dismiss(animation: false),
+      showMessage: _showMessage,
+    );
   }
 
   void _scheduleProgressUpdate() {
@@ -120,9 +143,7 @@ class _CreditReviewPageState extends State<CreditReviewPage> {
 
   Future<void> _showMessage(String message) async {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    await EasyLoading.showError(message);
   }
 
   void _goBack() {

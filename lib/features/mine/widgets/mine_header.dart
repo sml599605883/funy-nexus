@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
+import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/features/mine/mine_phone_formatter.dart';
 
@@ -34,10 +35,10 @@ class MineHeader extends StatelessWidget {
             width: context.r(48),
             height: context.r(48),
             decoration: BoxDecoration(
-              color: AppColors.mineAvatar,
               borderRadius: BorderRadius.circular(context.r(4)),
               border: Border.all(color: AppColors.surface),
             ),
+            child: Image(image: AssetImage(AppAssets.logo), fit: BoxFit.cover),
           ),
         ),
         Positioned(

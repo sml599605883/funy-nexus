@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fund_nexus/core/permissions/location_prompt_dialog.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/data/product_application_data.dart';
@@ -51,6 +53,42 @@ void main() {
     expect(gateway.admissionRequests, isEmpty);
   });
 
+  test('opens credit review when admission returns the app deep link', () async {
+    final gateway = _Gateway(
+      admission: const ProductAdmissionData(
+        statusCode: 302,
+        message: '',
+        target: 'ph://fund-nexus/ios/MagnetiseRewrap?modernised=product-1',
+      ),
+    );
+    final events = <String>[];
+    final flow = ProductApplicationFlow(
+      repository: gateway,
+      sessionStore: _session(authenticated: true),
+      permissions: PermissionCoordinator(
+        requestLocation: () async => PermissionStatus.granted,
+      ),
+    );
+
+    await flow.apply(
+      productId: 'product-1',
+      openLogin: (_) async => false,
+      openTarget: (target) async => events.add('target:$target'),
+      openCreditReview: (target) async => events.add('review:$target'),
+      openCertification: (step, productId) async =>
+          events.add('certification:$step:$productId'),
+      showLoading: () async => events.add('loading'),
+      dismissLoading: () async => events.add('dismiss'),
+      showMessage: (message) async => events.add('message:$message'),
+    );
+
+    expect(
+      events,
+      contains('review:ph://fund-nexus/ios/MagnetiseRewrap?modernised=product-1'),
+    );
+    expect(gateway.detailRequests, isEmpty);
+  });
+
   test('does not submit admission when location is declined', () async {
     final gateway = _Gateway();
     final messages = <String>[];
@@ -74,7 +112,10 @@ void main() {
     );
 
     expect(gateway.admissionRequests, isEmpty);
-    expect(messages, ['Location access is required to continue.']);
+    expect(messages, [
+      'Location access is required to confirm your identity and ensure '
+          'only authorized users can access this account.',
+    ]);
   });
 
   test('shows the missing-permission prompt after the first denial', () async {
@@ -99,7 +140,7 @@ void main() {
       showMessage: (_) async {},
       showLocationSettingsPrompt: (_) async {
         promptCalls++;
-        return false;
+        return LocationPromptResult.continueFlow;
       },
     );
 
@@ -107,38 +148,81 @@ void main() {
     expect(gateway.admissionRequests, hasLength(1));
   });
 
-  test('continues after cancelling the settings prompt like DC', () async {
-    final gateway = _Gateway(
-      admission: const ProductAdmissionData(
-        statusCode: 302,
-        message: '',
-        target: 'https://web.example.com/application',
-      ),
-    );
-    final targets = <String>[];
-    final flow = ProductApplicationFlow(
-      repository: gateway,
-      sessionStore: _session(authenticated: true),
-      permissions: PermissionCoordinator(
-        requestLocation: () async => PermissionStatus.permanentlyDenied,
-      ),
-    );
+  test(
+    'continues the application when the location prompt is cancelled',
+    () async {
+      final gateway = _Gateway();
+      final flow = ProductApplicationFlow(
+        repository: gateway,
+        sessionStore: _session(authenticated: true),
+        permissions: PermissionCoordinator(
+          requestLocation: () async => PermissionStatus.permanentlyDenied,
+        ),
+      );
 
-    await flow.apply(
-      productId: 'product-1',
-      openLogin: (_) async => false,
-      openTarget: (target) async => targets.add(target),
-      openCreditReview: (_) async {},
-      openCertification: (step, productId) async {},
-      showLoading: () async {},
-      dismissLoading: () async {},
-      showMessage: (_) async {},
-      showLocationSettingsPrompt: (_) async => false,
-    );
+      await flow.apply(
+        productId: 'product-1',
+        openLogin: (_) async => false,
+        openTarget: (_) async {},
+        openCreditReview: (_) async {},
+        openCertification: (step, productId) async {},
+        showLoading: () async {},
+        dismissLoading: () async {},
+        showMessage: (_) async {},
+        showLocationSettingsPrompt: (_) async =>
+            LocationPromptResult.continueFlow,
+      );
 
-    expect(gateway.admissionRequests, ['product-1']);
-    expect(targets, ['https://web.example.com/application']);
-  });
+      expect(gateway.admissionRequests, ['product-1']);
+    },
+  );
+
+  test(
+    'opens settings and aborts when the location prompt is confirmed',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const channel = MethodChannel('flutter.baseflow.com/permissions/methods');
+      final calls = <String>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        return true;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+      final gateway = _Gateway(
+        admission: const ProductAdmissionData(
+          statusCode: 302,
+          message: '',
+          target: 'https://web.example.com/application',
+        ),
+      );
+      final flow = ProductApplicationFlow(
+        repository: gateway,
+        sessionStore: _session(authenticated: true),
+        permissions: PermissionCoordinator(
+          requestLocation: () async => PermissionStatus.permanentlyDenied,
+        ),
+      );
+
+      await flow.apply(
+        productId: 'product-1',
+        openLogin: (_) async => false,
+        openTarget: (_) async {},
+        openCreditReview: (_) async {},
+        openCertification: (step, productId) async {},
+        showLoading: () async {},
+        dismissLoading: () async {},
+        showMessage: (_) async {},
+        showLocationSettingsPrompt: (_) async =>
+            LocationPromptResult.openSettings,
+      );
+
+      expect(calls, contains('openAppSettings'));
+      expect(gateway.admissionRequests, isEmpty);
+    },
+  );
 
   test(
     'loads product details and opens the server-selected certification',

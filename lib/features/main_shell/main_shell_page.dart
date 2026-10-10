@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/navigation/app_route_observer.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
@@ -20,6 +21,7 @@ import 'package:fund_nexus/features/main_shell/state/main_tab_cubit.dart';
 import 'package:fund_nexus/features/mine/mine_page.dart';
 import 'package:fund_nexus/features/progress/progress_page.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
+import 'package:fund_nexus/features/product/state/credit_review_polling_coordinator.dart';
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
 import 'home_popup.dart';
 import 'home_popup_data.dart';
@@ -50,9 +52,13 @@ class _MainShellPageState extends State<MainShellPage>
   bool _routeVisible = true;
   bool _wasInBackground = false;
   bool _initialPopupRequested = false;
+  String? _appVersion;
   final Set<int> _popupRequestsInFlight = <int>{};
   PageRoute<dynamic>? _subscribedRoute;
   StreamSubscription<void>? _sessionExpirySubscription;
+  StreamSubscription<String>? _creditReviewApprovalSubscription;
+
+  static const _websiteUrl = 'https://www.baidu.com';
 
   static const _items = <_TabItemData>[
     _TabItemData(
@@ -82,6 +88,17 @@ class _MainShellPageState extends State<MainShellPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(widget.reportService?.start());
     });
+    unawaited(_loadAppVersion());
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() => _appVersion = packageInfo.version.trim());
+    } catch (error) {
+      debugPrint('[FundNexus] load app version failed: $error');
+    }
   }
 
   @override
@@ -98,6 +115,10 @@ class _MainShellPageState extends State<MainShellPage>
     _sessionExpirySubscription ??= widget.sessionExpiryEvents?.listen(
       (_) => unawaited(_openLoginAfterSessionExpiry()),
     );
+    _creditReviewApprovalSubscription ??= context
+        .read<CreditReviewPollingCoordinator>()
+        .approvals
+        .listen((_) => _reloadHomeAfterCreditApproval());
     final route = ModalRoute.of(context);
     if (route is PageRoute<dynamic> && route != _subscribedRoute) {
       if (_subscribedRoute != null) {
@@ -115,6 +136,7 @@ class _MainShellPageState extends State<MainShellPage>
   @override
   void dispose() {
     _sessionExpirySubscription?.cancel();
+    _creditReviewApprovalSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     appRouteObserver.unsubscribe(this);
     super.dispose();
@@ -163,8 +185,10 @@ class _MainShellPageState extends State<MainShellPage>
               MinePage(
                 key: const PageStorageKey('mine-page'),
                 phone: context.read<SessionStore>().phone,
+                appVersion: _appVersion,
                 onCustomerService: () => _openCustomerService(context),
                 onPrivacyPolicy: () => _openPrivacyPolicy(context),
+                onWebsiteTap: () => unawaited(_openWebsite()),
                 onAccountExitSuccess: () async {
                   context.read<MainTabCubit>().selectTab(0);
                   await context.read<HomeCubit>().load();
@@ -202,6 +226,10 @@ class _MainShellPageState extends State<MainShellPage>
         ),
       ),
     );
+  }
+
+  Future<void> _openWebsite() async {
+    await const ExternalUrlBridge().openHttpUrl(_websiteUrl);
   }
 
   Future<void> _refreshHomeFromPull() async {
@@ -266,6 +294,11 @@ class _MainShellPageState extends State<MainShellPage>
     } else if (selectedTab == 2) {
       unawaited(_requestPopup(scene: 2));
     }
+  }
+
+  void _reloadHomeAfterCreditApproval() {
+    if (!mounted) return;
+    unawaited(context.read<HomeCubit>().load());
   }
 
   Future<void> _requestPopup({required int scene}) async {

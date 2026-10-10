@@ -138,6 +138,37 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
+  testWidgets('ignores a tapped promo banner without a target', (tester) async {
+    final cubit = HomeCubit(
+      loadHome: () async => const HomeData(
+        hasSections: true,
+        banners: [
+          HomeBannerData(
+            id: 'banner-1',
+            target: '',
+            imageUrl: 'https://example.com/one.png',
+          ),
+        ],
+      ),
+    );
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResponsiveScope(
+          child: BlocProvider.value(value: cubit, child: const HomePage()),
+        ),
+      ),
+    );
+    await cubit.load();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('home-promo-banner')));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('renders the first and last server loan terms', (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1;
@@ -538,8 +569,70 @@ void main() {
             ),
           )
           .image,
-      const NetworkImage('https://example.com/second.png'),
+     const NetworkImage('https://example.com/second.png'),
+   );
+  });
+
+  testWidgets('reports the promo banner page that was tapped', (tester) async {
+    final tapped = <HomeBannerData>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResponsiveScope(
+          child: Scaffold(
+            body: HomeContent(
+              data: const HomeData(
+                hasSections: true,
+                banners: [
+                  HomeBannerData(
+                    id: 'first',
+                    target: 'https://example.com/first',
+                    imageUrl: 'https://example.com/first.png',
+                  ),
+                  HomeBannerData(
+                    id: 'second',
+                    target: 'https://example.com/second',
+                    imageUrl: 'https://example.com/second.png',
+                  ),
+                ],
+              ),
+              onPromoBannerTap: tapped.add,
+            ),
+          ),
+        ),
+      ),
     );
+
+    await tester.tap(find.byKey(const Key('home-promo-banner-image-0')));
+    await tester.pump();
+    expect(tapped.map((banner) => banner.id), ['first']);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home-promo-banner-image-1')));
+    await tester.pump();
+    expect(tapped.map((banner) => banner.id), ['first', 'second']);
+  });
+
+  testWidgets('keeps the fallback promo banner untappable', (tester) async {
+    final tapped = <HomeBannerData>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResponsiveScope(
+          child: Scaffold(
+            body: HomeContent(
+              data: const HomeData(hasSections: true),
+              onPromoBannerTap: tapped.add,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('home-promo-banner')));
+    await tester.pump();
+
+    expect(tapped, isEmpty);
   });
 
   testWidgets('renders Toolings recommendations without a More action', (

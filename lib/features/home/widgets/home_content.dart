@@ -15,6 +15,7 @@ class HomeContent extends StatelessWidget {
     this.onApply,
     this.onApplyRecommendation,
     this.onCustomerService,
+    this.onPromoBannerTap,
     super.key,
   });
 
@@ -23,6 +24,7 @@ class HomeContent extends StatelessWidget {
   final ValueChanged<HomeCardData>? onApply;
   final ValueChanged<HomeRecommendationData>? onApplyRecommendation;
   final VoidCallback? onCustomerService;
+  final ValueChanged<HomeBannerData>? onPromoBannerTap;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +59,10 @@ class HomeContent extends StatelessWidget {
                   ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: context.r(16)),
-                  child: _PromoBanner(banners: data.promoBanners),
+                  child: _PromoBanner(
+                    banners: data.promoBanners,
+                    onTap: onPromoBannerTap,
+                  ),
                 ),
                 if (data.recommendations.isNotEmpty) ...[
                   SizedBox(height: context.r(16)),
@@ -90,9 +95,10 @@ class HomeContent extends StatelessWidget {
 }
 
 class _PromoBanner extends StatefulWidget {
-  const _PromoBanner({required this.banners});
+  const _PromoBanner({required this.banners, required this.onTap});
 
   final List<HomeBannerData> banners;
+  final ValueChanged<HomeBannerData>? onTap;
 
   @override
   State<_PromoBanner> createState() => _PromoBannerState();
@@ -167,7 +173,8 @@ class _PromoBannerState extends State<_PromoBanner> {
                       },
                       itemBuilder: (_, index) => _PromoBannerPage(
                         key: Key('home-promo-banner-image-$index'),
-                        imageUrl: _banners[index].imageUrl,
+                        banner: _banners[index],
+                        onTap: widget.onTap,
                       ),
                     ),
             ),
@@ -202,14 +209,16 @@ class _PromoBannerState extends State<_PromoBanner> {
 }
 
 class _PromoBannerPage extends StatelessWidget {
-  const _PromoBannerPage({super.key, this.imageUrl = ''});
+  const _PromoBannerPage({super.key, this.banner, this.onTap});
 
-  final String imageUrl;
+  final HomeBannerData? banner;
+  final ValueChanged<HomeBannerData>? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = banner?.imageUrl ?? '';
     final hasImage = imageUrl.trim().isNotEmpty;
-    return Stack(
+    final page = Stack(
       children: [
         Positioned.fill(child: _PromoBannerImage(imageUrl: imageUrl)),
         if (!hasImage)
@@ -232,6 +241,15 @@ class _PromoBannerPage extends StatelessWidget {
             ),
           ),
       ],
+    );
+
+    final tappedBanner = banner;
+    final tapHandler = onTap;
+    if (tappedBanner == null || tapHandler == null) return page;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => tapHandler(tappedBanner),
+      child: page,
     );
   }
 }

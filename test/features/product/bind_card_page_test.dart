@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
+import 'package:fund_nexus/core/face/face_liveness_bridge.dart';
+import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
+import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/features/product/certification/bind_card_page.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_progress.dart';
 import 'package:fund_nexus/features/product/certification/widgets/personal_information_form.dart';
 import 'package:fund_nexus/features/product/data/bind_card_data.dart';
+import 'package:fund_nexus/features/product/data/product_application_data.dart';
 import 'package:fund_nexus/features/product/data/product_repository.dart';
+import 'package:fund_nexus/features/product/state/product_application_flow.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../support/product_gateway_fakes.dart';
 
 void main() {
   testWidgets('renders the dynamic bank form and preserves selection per tab', (
@@ -128,6 +138,149 @@ void main() {
       lessThanOrEqualTo(media.size.height - 300),
     );
   });
+
+  testWidgets('submits bind card when liveness carries an id', (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final gateway = _LivenessGateway();
+    final session = SessionStore(_MemorySessionPersistence());
+
+    await tester.pumpWidget(
+      RepositoryProvider<SessionStore>.value(
+        value: session,
+        child: RepositoryProvider<ProductApplicationFlow>.value(
+          value: _SilentFlow(session),
+          child: MaterialApp(
+            builder: EasyLoading.init(),
+            home: BindCardPage(
+              productId: 'product-1',
+              orderNumber: 'order-1',
+              gateway: gateway,
+              faceGateway: _FakeFaceTokenGateway(),
+              permissions: PermissionCoordinator(
+                requestCamera: () async => PermissionStatus.granted,
+              ),
+              launchLiveness: (_) async => const FaceLivenessResult(
+                success: false,
+                code: 3001,
+                message: 'completed',
+                image: '',
+                livenessId: 'liveness-42',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('bindCardUpload')));
+    for (var frame = 0; frame < 16; frame++) {
+      await tester.pump(const Duration(milliseconds: 30));
+    }
+
+    expect(gateway.payloads, hasLength(2));
+    expect(gateway.payloads.last.type, '7');
+    expect(gateway.payloads.last.livenessId, 'liveness-42');
+  });
+}
+
+class _LivenessGateway implements BindCardGateway {
+  final List<BindCardLivenessPayload> payloads = <BindCardLivenessPayload>[];
+
+  @override
+  Future<BindCardData> fetchBindCard(String productId) async => BindCardData(
+    topPrompt: 'Choose a withdrawal method.',
+    bottomPrompt: 'Double-check your account details.',
+    groups: [
+      BindCardGroup(
+        type: '2',
+        label: 'Bank',
+        fields: [
+          const BindCardField(
+            title: 'Bank Account',
+            saveKey: 'cardNo',
+            placeholder: 'Please enter your account',
+            control: BindCardControl.text,
+            options: [],
+            required: true,
+            initialDisplayValue: '0123456789',
+          ),
+        ],
+      ),
+    ],
+  );
+
+  @override
+  Future<BindCardSubmitResult> submitBindCard({
+    required String productId,
+    required String cardType,
+    required Map<String, String> fields,
+    required BindCardLivenessPayload liveness,
+  }) async {
+    payloads.add(liveness);
+    if (payloads.length == 1) {
+      return const BindCardSubmitResult(code: '20000', bindId: '');
+    }
+    return const BindCardSubmitResult(code: '0', bindId: 'bind-42');
+  }
+}
+
+class _FakeFaceTokenGateway implements FaceVerificationGateway {
+  @override
+  Future<FaceLivenessToken> fetchFaceLivenessToken({
+    required String orderNumber,
+    String type = '0',
+  }) async => const FaceLivenessToken(
+    resultCode: '200',
+    license: 'license-42',
+    errorMessage: '',
+    livenessType: 7,
+  );
+
+  @override
+  Future<void> uploadFaceLiveness({
+    required String filePath,
+    required FaceLivenessToken token,
+    required String livenessId,
+  }) async {}
+}
+
+class _SilentFlow extends ProductApplicationFlow {
+  _SilentFlow(SessionStore session)
+    : super(
+        repository: StubProductGateway(),
+        sessionStore: session,
+        permissions: PermissionCoordinator(
+          requestCamera: () async => PermissionStatus.granted,
+        ),
+      );
+
+  @override
+  Future<void> resumeAfterCertification({
+    required String productId,
+    required ProductTargetAction openTarget,
+    required ProductStepAction openCertification,
+    required ProductLoadingAction showLoading,
+    required ProductLoadingAction dismissLoading,
+    required ProductMessageAction showMessage,
+  }) async {}
+}
+
+class _MemorySessionPersistence implements SessionPersistence {
+  @override
+  Future<String?> readPhone() async => null;
+
+  @override
+  Future<String?> readSessionId() async => null;
+
+  @override
+  Future<void> writePhone(String? phone) async {}
+
+  @override
+  Future<void> writeSessionId(String? sessionId) async {}
 }
 
 class _Gateway implements BindCardGateway {

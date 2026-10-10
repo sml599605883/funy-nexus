@@ -27,6 +27,8 @@ class MinePage extends StatelessWidget {
     this.onAccountExitSuccess,
     this.onCustomerService,
     this.onPrivacyPolicy,
+    this.onWebsiteTap,
+    this.appVersion,
     this.showLoading,
     this.dismissLoading,
     this.showMessage,
@@ -38,6 +40,8 @@ class MinePage extends StatelessWidget {
   final AccountExitSuccessHandler? onAccountExitSuccess;
   final VoidCallback? onCustomerService;
   final VoidCallback? onPrivacyPolicy;
+  final VoidCallback? onWebsiteTap;
+  final String? appVersion;
   final Future<void> Function()? showLoading;
   final Future<void> Function()? dismissLoading;
   final AccountExitMessageHandler? showMessage;
@@ -71,6 +75,8 @@ class MinePage extends StatelessWidget {
                     onAccountTap: () => _showAccountPanel(context),
                     onCustomerService: onCustomerService,
                     onPrivacyPolicy: onPrivacyPolicy,
+                    onWebsiteTap: onWebsiteTap,
+                    appVersion: appVersion,
                   ),
                 ),
                 Positioned(
@@ -126,8 +132,10 @@ class MinePage extends StatelessWidget {
     BuildContext context,
     AccountExitAction action,
   ) async {
+    var loadingVisible = false;
     try {
       await (showLoading ?? _defaultShowLoading)();
+      loadingVisible = true;
       final succeeded =
           await (onAccountExit ??
               (action) async {
@@ -141,10 +149,16 @@ class MinePage extends StatelessWidget {
       await onAccountExitSuccess?.call();
       return true;
     } catch (error) {
+      if (loadingVisible) {
+        await (dismissLoading ?? _defaultDismissLoading)();
+        loadingVisible = false;
+      }
       await (showMessage ?? _defaultShowMessage)(_messageFor(error));
       return false;
     } finally {
-      await (dismissLoading ?? _defaultDismissLoading)();
+      if (loadingVisible) {
+        await (dismissLoading ?? _defaultDismissLoading)();
+      }
     }
   }
 

@@ -10,6 +10,7 @@ import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
+import 'package:fund_nexus/core/permissions/location_prompt_dialog.dart';
 import 'package:fund_nexus/features/product/state/product_application_flow.dart';
 import 'package:fund_nexus/features/product/web/product_web_page.dart';
 import 'order_list_models.dart';
@@ -149,12 +150,8 @@ class _OrderListPageState extends State<OrderListPage> with RouteAware {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              error is ApiException ? error.message : 'Unable to open order.',
-            ),
-          ),
+        await EasyLoading.showError(
+          error is ApiException ? error.message : 'Unable to open order.',
         );
       }
     } finally {
@@ -185,12 +182,10 @@ class _OrderListPageState extends State<OrderListPage> with RouteAware {
       showLoading: () => EasyLoading.show(status: 'Loading...'),
       dismissLoading: () => EasyLoading.dismiss(animation: false),
       showMessage: (message) async {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        }
+        if (mounted) await EasyLoading.showError(message);
       },
+      showLocationSettingsPrompt: (prompt) =>
+          showLocationPromptDialog(context, prompt),
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fund_nexus/core/network/api_exception.dart';
+import 'package:fund_nexus/core/permissions/location_prompt_dialog.dart';
 import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
@@ -14,7 +15,8 @@ typedef ProductLoginAction = Future<bool> Function(String productId);
 typedef ProductTargetAction = Future<void> Function(String target);
 typedef ProductStepAction =
     Future<void> Function(String step, String productId);
-typedef ProductLocationSettingsPrompt = Future<bool> Function(String message);
+typedef ProductLocationSettingsPrompt =
+    Future<LocationPromptResult> Function(LocationPrompt prompt);
 
 class ProductApplicationFlow {
   ProductApplicationFlow({
@@ -103,17 +105,16 @@ class ProductApplicationFlow {
     required ProductMessageAction showMessage,
     required ProductLocationSettingsPrompt? showLocationSettingsPrompt,
   }) async {
-    final requiresSettings =
-        decision == LocationAccessDecision.settingsRequired ||
-        decision == LocationAccessDecision.serviceDisabled;
-    final message = decision == LocationAccessDecision.serviceDisabled
-        ? 'Turn on Location Services to continue your application.'
-        : 'Location access is required to continue.';
-    if (!requiresSettings || showLocationSettingsPrompt == null) {
-      await showMessage(message);
+    if (decision == LocationAccessDecision.granted) return true;
+
+    final prompt = LocationPrompt.forDecision(decision);
+    if (showLocationSettingsPrompt == null) {
+      await showMessage(prompt.message);
       return false;
     }
-    if (await showLocationSettingsPrompt(message)) {
+
+    final result = await showLocationSettingsPrompt(prompt);
+    if (result == LocationPromptResult.openSettings) {
       await openAppSettings();
       return false;
     }

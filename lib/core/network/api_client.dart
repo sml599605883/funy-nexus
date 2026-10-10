@@ -236,6 +236,23 @@ class ApiClient {
     );
   }
 
+  /// Uploads a Home promo banner click.
+  ///
+  /// The server only accepts the record for a signed-in session with a
+  /// non-empty banner target, so callers must gate the call themselves.
+  Future<ApiResponse<void>> uploadBannerClick({
+    required String bannerConfigId,
+  }) {
+    return post<void>(
+      '/viler/deucedly',
+      data: {
+        'heatproof': bannerConfigId.trim(),
+        'outpreen': ApiSignature.randomDigits(6),
+      },
+      decode: (_) {},
+    );
+  }
+
   Future<ApiResponse<Json>> fetchProgressAccounts({required String productId}) {
     return post<Json>(
       '/viler/ritualize',

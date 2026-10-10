@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/app/layout/app_responsive.dart';
+import 'package:fund_nexus/app/navigation/app_route_observer.dart';
 import 'package:fund_nexus/app/resources/app_assets.dart';
 import 'package:fund_nexus/features/product/credit_review/credit_review_page.dart';
+import 'package:fund_nexus/features/product/state/credit_review_polling_coordinator.dart';
+
+import '../../support/product_gateway_fakes.dart';
 
 void main() {
   testWidgets('matches the 375x812 waiting-credit layout', (tester) async {
@@ -12,11 +17,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: ResponsiveScope(child: CreditReviewPage(productId: 'product-1')),
-      ),
+      _reviewApp(),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
 
     final illustration = find.byKey(const Key('credit-review-illustration'));
     expect(illustration, findsOneWidget);
@@ -46,7 +49,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _reviewApp(
         home: ResponsiveScope(
           child: Builder(
             builder: (context) => Center(
@@ -84,11 +87,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: ResponsiveScope(child: CreditReviewPage(productId: 'product-1')),
-      ),
+      _reviewApp(),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
 
     final illustration = find.byKey(const Key('credit-review-illustration'));
     expect(tester.getTopLeft(illustration).dy, closeTo(290, 1));
@@ -107,4 +108,19 @@ void main() {
     expect(tester.getTopLeft(illustration).dy, lessThan(290));
     expect(tester.takeException(), isNull);
   });
+}
+
+Widget _reviewApp({Widget? home}) {
+  return RepositoryProvider<CreditReviewPollingCoordinator>(
+    create: (_) =>
+        CreditReviewPollingCoordinator(gateway: StubProductGateway()),
+    child: MaterialApp(
+      navigatorObservers: [appRouteObserver],
+      home:
+          home ??
+          const ResponsiveScope(
+            child: CreditReviewPage(productId: 'product-1'),
+          ),
+    ),
+  );
 }

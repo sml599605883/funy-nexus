@@ -29,6 +29,7 @@ class _StartupNetworkGateState extends State<StartupNetworkGate>
   bool _checking = false;
   bool _ready = false;
   bool _failed = false;
+  bool _showLaunch = true;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _StartupNetworkGateState extends State<StartupNetworkGate>
       if (!mounted) return;
       setState(() {
         _checking = false;
+        _showLaunch = false;
         _ready = available;
         _failed = !available;
       });
@@ -68,6 +70,7 @@ class _StartupNetworkGateState extends State<StartupNetworkGate>
       if (!mounted) return;
       setState(() {
         _checking = false;
+        _showLaunch = false;
         _failed = true;
       });
     }
@@ -76,7 +79,30 @@ class _StartupNetworkGateState extends State<StartupNetworkGate>
   @override
   Widget build(BuildContext context) {
     if (_ready) return widget.readyBuilder();
+    if (_showLaunch) return const _LaunchPage();
     return _NetworkUnavailablePage(checking: _checking, onRetry: _check);
+  }
+}
+
+class _LaunchPage extends StatelessWidget {
+  const _LaunchPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: AppColors.surface,
+        body: SizedBox.expand(
+          child: Image.asset(
+            AppAssets.launch,
+            key: const Key('startup-launch'),
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+          ),
+        ),
+      ),
+    );
   }
 }
 

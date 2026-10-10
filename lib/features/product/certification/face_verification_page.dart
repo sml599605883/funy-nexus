@@ -13,6 +13,7 @@ import 'package:fund_nexus/core/permissions/permission_coordinator.dart';
 import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/report/risk_report_scene.dart';
+import 'package:fund_nexus/features/product/certification/face_token_handler.dart';
 import 'package:fund_nexus/features/product/certification/identity_upload_continuation.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_page_chrome.dart';
 import 'package:fund_nexus/features/product/certification/widgets/certification_retention_guard.dart';
@@ -179,11 +180,12 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
       final token = await gateway.fetchFaceLivenessToken(
         orderNumber: orderNumber,
       );
-      if (token.resultCode != '200') {
-        await EasyLoading.dismiss();
-        if (token.errorMessage.isNotEmpty) {
-          await EasyLoading.showError(token.errorMessage);
-        }
+      if (!mounted) return;
+      if (!await handleFaceTokenResponse(
+        context,
+        token: token,
+        productId: widget.productId,
+      )) {
         return;
       }
       if (token.license.isEmpty || token.livenessType != 7) {
@@ -209,16 +211,13 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
           ),
         );
       }
-      if (!result.success) {
+      // 同盾活体只要回调返回了图片和 liveness_id 即视为识别成功并上传，
+      // 不再依据返回码推导的 success 判定，避免 code 判定偏差导致上传接口未被调用。
+      if (!result.hasUploadableData) {
         throw _FaceVerificationFailure(
           result.message.isEmpty
               ? 'Face verification was not completed.'
               : result.message,
-        );
-      }
-      if (result.image.isEmpty || result.livenessId.isEmpty) {
-        throw const _FaceVerificationFailure(
-          'Face verification returned incomplete data.',
         );
       }
       faceImagePath = await (widget.writeFaceImage ?? _writeFaceImage)(
@@ -265,22 +264,21 @@ class _FaceVerificationPageState extends State<FaceVerificationPage> {
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Allow Camera Access'),
+        title: const Text('Verification Paused'),
         content: const Text(
-          "We can't complete face verification without camera access. "
-          'Enable the permission to continue your application securely.',
+          'Camera access is required to capture your clear ID photo and complete your verification flow. Please grant permission in Settings.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Maybe Later'),
           ),
           TextButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               await openAppSettings();
             },
-            child: const Text('Settings'),
+            child: const Text('Turn On'),
           ),
         ],
       ),

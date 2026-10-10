@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fund_nexus/app/startup/startup_network_gate.dart';
 
 void main() {
-  testWidgets('shows the network page while probing and enters the app', (
+  testWidgets('shows the launch image while probing and enters the app', (
     tester,
   ) async {
     final probe = Completer<bool>();
@@ -14,17 +14,40 @@ void main() {
     );
     await tester.pump();
 
+    expect(find.byKey(const Key('startup-launch')), findsOneWidget);
     expect(
       find.textContaining('Network error, please try again later or'),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.byKey(const Key('startup-network-retry')), findsOneWidget);
+    expect(find.byKey(const Key('startup-network-retry')), findsNothing);
     expect(find.text('ready'), findsNothing);
 
     probe.complete(true);
     await tester.pumpAndSettle();
 
     expect(find.text('ready'), findsOneWidget);
+  });
+
+  testWidgets('hides the launch image after the probe fails', (tester) async {
+    final probe = Completer<bool>();
+    await tester.pumpWidget(
+      StartupNetworkGate(probe: () => probe.future, readyBuilder: _readyPage),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const Key('startup-launch')), findsOneWidget);
+    expect(find.byKey(const Key('startup-network-retry')), findsNothing);
+
+    probe.complete(false);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('startup-launch')), findsNothing);
+    expect(
+      find.textContaining('Network error, please try again later or'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('startup-network-retry')), findsOneWidget);
+    expect(find.text('ready'), findsNothing);
   });
 
   testWidgets('keeps the page on failure and retries once on tap', (
@@ -43,6 +66,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(attempts, 1);
     expect(find.text('ready'), findsNothing);
+    expect(find.byKey(const Key('startup-launch')), findsNothing);
 
     await tester.tap(find.byKey(const Key('startup-network-retry')));
     await tester.pumpAndSettle();
@@ -54,23 +78,28 @@ void main() {
   testWidgets('does not start a duplicate probe while checking', (
     tester,
   ) async {
-    final probe = Completer<bool>();
+    final retryProbe = Completer<bool>();
     var attempts = 0;
     await tester.pumpWidget(
       StartupNetworkGate(
         probe: () {
           attempts++;
-          return probe.future;
+          return attempts == 1 ? Future.value(false) : retryProbe.future;
         },
         readyBuilder: _readyPage,
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('startup-network-retry')));
     await tester.pump();
+    expect(attempts, 2);
+    expect(find.byKey(const Key('startup-launch')), findsNothing);
 
-    expect(attempts, 1);
-    probe.complete(false);
+    await tester.tap(find.byKey(const Key('startup-network-retry')));
+    await tester.pump();
+    expect(attempts, 2);
+
+    retryProbe.complete(false);
     await tester.pumpAndSettle();
   });
 
@@ -82,11 +111,11 @@ void main() {
 
     await tester.pumpWidget(
       StartupNetworkGate(
-        probe: () => Completer<bool>().future,
+        probe: () async => false,
         readyBuilder: _readyPage,
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(
       tester.getRect(find.byKey(const Key('startup-network-retry'))),

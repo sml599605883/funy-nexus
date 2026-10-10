@@ -10,6 +10,8 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fund_nexus/core/navigation/external_url_bridge.dart';
 import 'package:fund_nexus/core/network/api_client.dart';
+import 'package:fund_nexus/core/push/push_deep_link.dart';
+import 'package:fund_nexus/core/push/push_navigation_helper.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
 import 'package:fund_nexus/core/review/app_review_bridge.dart';
 import 'package:fund_nexus/features/product/account/account_list_page.dart';
@@ -411,9 +413,15 @@ class _ProductWebPageState extends State<ProductWebPage>
     }
     if (uri.scheme == 'http' || uri.scheme == 'https') {
       if (!mounted) return;
-      await Navigator.of(context).push<void>(
+      // The current WebView is replaced instead of stacked so that the back
+      // action returns to the page that opened it (A -> webview -> back to A).
+      await Navigator.of(context).pushReplacement<void, void>(
         MaterialPageRoute<void>(builder: (_) => ProductWebPage(url: rawUrl)),
       );
+      return;
+    }
+    if (PushDeepLinkParser.isAppDeepLink(uri)) {
+      await PushNavigationHelper.navigateToTarget(rawUrl);
       return;
     }
     final opened = await const ExternalUrlBridge().openUri(uri);
@@ -494,9 +502,7 @@ class _ProductWebPageState extends State<ProductWebPage>
 
   Future<void> _showMessage(String message) async {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    await EasyLoading.showError(message);
   }
 
   @override

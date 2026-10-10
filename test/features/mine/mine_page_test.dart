@@ -64,6 +64,28 @@ void main() {
     expect(privacyPolicyCalls, 1);
   });
 
+  testWidgets('shows the app version from the injected value', (tester) async {
+    await tester.pumpWidget(
+      _minePage(phone: '96212341300', appVersion: '1.0.0'),
+    );
+
+    expect(find.text('v1.0.0'), findsOneWidget);
+  });
+
+  testWidgets('opens the website from Mine', (tester) async {
+    var websiteCalls = 0;
+    await tester.pumpWidget(
+      _minePage(phone: '96212341300', onWebsiteTap: () => websiteCalls++),
+    );
+
+    final website = find.byKey(const Key('mine-website'));
+    final websiteTap = tester.widget<InkWell>(
+      find.descendant(of: website, matching: find.byType(InkWell)),
+    );
+    websiteTap.onTap!();
+    expect(websiteCalls, 1);
+  });
+
   testWidgets('opens and closes the account action panel', (tester) async {
     await tester.pumpWidget(
       _minePage(phone: '96212341300', onAccountExit: (_) async => true),
@@ -86,7 +108,7 @@ void main() {
     expect(find.byKey(const Key('mine-account-panel')), findsNothing);
   });
 
-  testWidgets('opens the logout retention dialog and closes it on Continue', (
+  testWidgets('opens the logout retention dialog and closes it on keep', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -102,6 +124,8 @@ void main() {
       find.byKey(const Key('mine-logout-retention-dialog')),
       findsOneWidget,
     );
+    expect(find.text('Keep Me Notified'), findsOneWidget);
+    expect(find.text('Log Out'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('mine-retention-exit')));
     await tester.pumpAndSettle();
@@ -122,6 +146,8 @@ void main() {
       find.byKey(const Key('mine-delete-account-retention-dialog')),
       findsOneWidget,
     );
+    expect(find.text('Save My Data'), findsOneWidget);
+    expect(find.text('Proceed to Delete'), findsOneWidget);
   });
 
   testWidgets('confirms an account action through the injected handler', (
@@ -175,6 +201,32 @@ void main() {
     );
     expect(messages, ['exit failed']);
   });
+
+  testWidgets('dismisses loading before showing the exit error', (
+    tester,
+  ) async {
+    final events = <String>[];
+    await tester.pumpWidget(
+      _minePage(
+        phone: '96212341300',
+        onAccountExit: (_) async => throw const ApiException(
+          type: ApiFailureType.business,
+          message: 'exit failed',
+        ),
+        showLoading: () async => events.add('loading'),
+        dismissLoading: () async => events.add('dismiss'),
+        showMessage: (message) async => events.add('message:$message'),
+      ),
+    );
+
+    await _openAccountPanel(tester);
+    await tester.tap(find.byKey(const Key('mine-account-log-out')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('mine-retention-exit')));
+    await tester.pumpAndSettle();
+
+    expect(events, ['loading', 'dismiss', 'message:exit failed']);
+  });
 }
 
 Future<void> _openAccountPanel(WidgetTester tester) async {
@@ -190,8 +242,12 @@ Widget _minePage({
   required String phone,
   AccountExitHandler? onAccountExit,
   AccountExitMessageHandler? showMessage,
+  Future<void> Function()? showLoading,
+  Future<void> Function()? dismissLoading,
   VoidCallback? onCustomerService,
   VoidCallback? onPrivacyPolicy,
+  VoidCallback? onWebsiteTap,
+  String? appVersion,
 }) {
   return RepositoryProvider<SessionStore>.value(
     value: _TestSessionStore(phone),
@@ -203,8 +259,10 @@ Widget _minePage({
             onAccountExit: onAccountExit,
             onCustomerService: onCustomerService,
             onPrivacyPolicy: onPrivacyPolicy,
-            showLoading: () async {},
-            dismissLoading: () async {},
+            onWebsiteTap: onWebsiteTap,
+            appVersion: appVersion,
+            showLoading: showLoading ?? () async {},
+            dismissLoading: dismissLoading ?? () async {},
             showMessage: showMessage,
           ),
         ),

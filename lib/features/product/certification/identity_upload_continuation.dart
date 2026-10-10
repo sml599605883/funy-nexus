@@ -49,9 +49,7 @@ class _IdentityUploadContinuationPageState
       dismissLoading: EasyLoading.dismiss,
       showMessage: (message) async {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+        await EasyLoading.showError(message);
       },
     );
   }

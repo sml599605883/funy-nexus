@@ -3,6 +3,8 @@ abstract final class AppAssets {
   static const loginAgreementUnchecked = 'assets/login_agreement_unchecked.png';
   static const loginBanner = 'assets/login_banner.png';
   static const loginLogo = 'assets/login_logo.png';
+  static const logo = 'assets/logo.png';
+  static const launch = 'assets/launch.png';
 
   static const homeLoanHero = 'assets/home_loan_hero.png';
   static const homeCreditActivationProgress =

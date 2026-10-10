@@ -118,7 +118,7 @@ SPEC CHECKSUMS:
   adjust_sdk: 91c938e2b7e56c81f65e6bf9e995164e76c749e0
   AdjustSignature: 9498705a4ac67b719e31828be4d74fbb8656950c
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_image_compress_common: 11d5dcfb36f4ded92320bfa896261813a073240e
   flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
   flutter_native_contact_picker: 37b345f52a15ca8f1fe0072159b4f022998a8682

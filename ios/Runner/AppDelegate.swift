@@ -229,10 +229,11 @@ private final class FaceLivenessBridge {
   }
 
   /// Normalised view of a TrustDecision liveness callback. The SDK invokes the
-  /// "success" block for some non-zero business errors, so the verdict is keyed
-  /// off the numeric result code rather than which closure fired.
+  /// "success" block for some error results too, so the verdict is keyed off the
+  /// numeric result code rather than which closure fired. A completed session
+  /// reports 200.
   private struct LivenessOutcome {
-    private static let passingCodes: Set<Int> = [0]
+    private static let passingCodes: Set<Int> = [200]
 
     private let code: Int
     private let message: String

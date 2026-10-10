@@ -39,6 +39,8 @@ class _AccountRetentionDialogState extends State<AccountRetentionDialog> {
     final dialogAsset = isLogOut
         ? AppAssets.mineLogoutRetentionDialog
         : AppAssets.mineDeleteAccountRetentionDialog;
+    final keepLabel = isLogOut ? 'Keep Me Notified' : 'Save My Data';
+    final exitLabel = isLogOut ? 'Log Out' : 'Proceed to Delete';
 
     return Dialog(
       key: Key(
@@ -102,7 +104,7 @@ class _AccountRetentionDialogState extends State<AccountRetentionDialog> {
                     ),
                     child: Center(
                       child: Text(
-                        'Continue',
+                        keepLabel,
                         style: TextStyle(
                           color: AppColors.mineRetentionContinueText,
                           fontSize: context.r(15),
@@ -129,7 +131,7 @@ class _AccountRetentionDialogState extends State<AccountRetentionDialog> {
                     padding: EdgeInsets.zero,
                   ),
                   child: Text(
-                    'Exit',
+                    exitLabel,
                     style: TextStyle(
                       fontSize: context.r(15),
                       fontWeight: FontWeight.w700,

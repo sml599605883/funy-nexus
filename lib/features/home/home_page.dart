@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -5,7 +7,10 @@ import 'package:fund_nexus/app/layout/app_responsive.dart';
 import 'package:fund_nexus/app/theme/app_colors.dart';
 import 'package:fund_nexus/core/config/app_config.dart';
 import 'package:fund_nexus/core/navigation/customer_service_navigation.dart';
+import 'package:fund_nexus/core/network/api_client.dart';
+import 'package:fund_nexus/core/permissions/location_prompt_dialog.dart';
 import 'package:fund_nexus/core/report/report_service.dart';
+import 'package:fund_nexus/core/session/session_store.dart';
 import 'package:fund_nexus/core/state/async_state.dart';
 import 'package:fund_nexus/features/home/data/home_data.dart';
 import 'package:fund_nexus/features/home/state/home_cubit.dart';
@@ -28,11 +33,7 @@ class HomePage extends StatelessWidget {
         if (state case AsyncFailure<HomeData>(
           :final previousData,
         ) when previousData != null) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Unable to refresh home data')),
-            );
+          unawaited(EasyLoading.showError('Unable to refresh home data'));
         }
       },
       builder: (context, state) {
@@ -49,6 +50,8 @@ class HomePage extends StatelessWidget {
             onApplyRecommendation: (item) =>
                 _applyProduct(context, item.productId),
             onCustomerService: () => _openCustomerService(context),
+            onPromoBannerTap: (banner) =>
+                unawaited(_handleBannerTap(context, banner)),
           );
         }
         if (previousData != null) {
@@ -62,6 +65,8 @@ class HomePage extends StatelessWidget {
                   onApplyRecommendation: (item) =>
                       _applyProduct(context, item.productId),
                   onCustomerService: () => _openCustomerService(context),
+                  onPromoBannerTap: (banner) =>
+                      unawaited(_handleBannerTap(context, banner)),
                 ),
                 Positioned(
                   left: 0,
@@ -79,6 +84,8 @@ class HomePage extends StatelessWidget {
             onApplyRecommendation: (item) =>
                 _applyProduct(context, item.productId),
             onCustomerService: () => _openCustomerService(context),
+            onPromoBannerTap: (banner) =>
+                unawaited(_handleBannerTap(context, banner)),
           );
         }
         if (state is AsyncFailure<HomeData>) {
@@ -104,23 +111,7 @@ class HomePage extends StatelessWidget {
   Future<void> _applyProduct(BuildContext context, String productId) {
     return context.read<ProductApplicationFlow>().apply(
       productId: productId,
-      openLogin: (productId) async {
-        if (!context.mounted) return false;
-        final riskStartedAtSeconds = ReportService.nowSeconds();
-        return await Navigator.of(context).push<bool>(
-              MaterialPageRoute<bool>(
-                builder: (_) => LoginPage(
-                  onLoginSuccess: () async {
-                    await context.read<ReportService>().loginSucceeded(
-                      riskStartedAtSeconds: riskStartedAtSeconds,
-                    );
-                    if (context.mounted) Navigator.of(context).pop(true);
-                  },
-                ),
-              ),
-            ) ??
-            false;
-      },
+      openLogin: (_) => _openLogin(context),
       openTarget: (target) => _openWebTarget(context, target),
       openCreditReview: (_) async {
         if (!context.mounted) return;
@@ -144,8 +135,8 @@ class HomePage extends StatelessWidget {
       // waiting for EasyLoading's exit animation creates a visible blank gap.
       dismissLoading: () => EasyLoading.dismiss(animation: false),
       showMessage: (message) => _showMessage(context, message),
-      showLocationSettingsPrompt: (message) =>
-          _showLocationSettingsPrompt(context, message),
+      showLocationSettingsPrompt: (prompt) =>
+          showLocationPromptDialog(context, prompt),
     );
   }
 
@@ -160,7 +151,36 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Future<void> _handleBannerTap(
+    BuildContext context,
+    HomeBannerData banner,
+  ) async {
+    final target = banner.target.trim();
+    if (target.isEmpty) return;
+    await _reportBannerClick(context, banner.id);
+    if (!context.mounted) return;
+    await _openWebTarget(context, target);
+  }
+
+  /// Reporting is best effort: the documented scene requires a signed-in
+  /// session with a non-empty target, and a failed upload must never block
+  /// the banner destination.
+  Future<void> _reportBannerClick(BuildContext context, String bannerId) async {
+    final id = bannerId.trim();
+    if (id.isEmpty) return;
+    if (!context.read<SessionStore>().isAuthenticated) return;
+    try {
+      await context.read<ApiClient>().uploadBannerClick(bannerConfigId: id);
+    } catch (_) {
+      // Intentionally ignored.
+    }
+  }
+
   Future<void> _openCustomerService(BuildContext context) async {
+    if (!context.read<SessionStore>().isAuthenticated) {
+      await _openLogin(context);
+      return;
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => ProductWebPage(
@@ -170,37 +190,27 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Future<void> _showMessage(BuildContext context, String message) async {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<bool> _showLocationSettingsPrompt(
-    BuildContext context,
-    String message,
-  ) async {
+  Future<bool> _openLogin(BuildContext context) async {
     if (!context.mounted) return false;
-    return await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Allow Location Access'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Settings'),
-              ),
-            ],
+    final riskStartedAtSeconds = ReportService.nowSeconds();
+    return await Navigator.of(context).push<bool>(
+          MaterialPageRoute<bool>(
+            builder: (_) => LoginPage(
+              onLoginSuccess: () async {
+                await context.read<ReportService>().loginSucceeded(
+                  riskStartedAtSeconds: riskStartedAtSeconds,
+                );
+                if (context.mounted) Navigator.of(context).pop(true);
+              },
+            ),
           ),
         ) ??
         false;
+  }
+
+  Future<void> _showMessage(BuildContext context, String message) async {
+    if (!context.mounted) return;
+    await EasyLoading.showError(message);
   }
 }
 

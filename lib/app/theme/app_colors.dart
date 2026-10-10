@@ -138,6 +138,7 @@ abstract final class AppColors {
   static const accountListConfirmText = Color.fromRGBO(255, 255, 255, 1);
   static const accountListFooterShadow = Color.fromRGBO(233, 233, 233, 0.5);
   static const mineItemText = Color.fromRGBO(8, 11, 21, 1);
+  static const mineItemValue = Color.fromRGBO(90, 90, 90, 1);
   static const mineAvatar = Color.fromRGBO(25, 64, 226, 1);
   static const mineOrderShadow = Color.fromRGBO(0, 0, 0, 0.09);
   static const mineAccountPanelTop = Color.fromRGBO(46, 100, 83, 1);
